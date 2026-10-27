@@ -1,0 +1,103 @@
+cells: mine=96 theirs=96 common=96
+variant            workload           c phase                          tok/s                   TTFT                    hit             tok/verify
+dflash-cache-off   capacity-pressure  1 initial-empty     60.52 vs     60.42    341.42 vs    342.30      0.00 vs      0.00      2.98 vs      2.98
+dflash-cache-off   capacity-pressure  8 initial-empty     76.72 vs     76.68   2378.51 vs   2389.98      0.00 vs      0.00      3.10 vs      3.10
+dflash-cache-off   multiturn-branch   1 initial-empty    118.87 vs    118.50    116.27 vs    116.52      0.00 vs      0.00      3.45 vs      3.45
+dflash-cache-off   multiturn-branch   8 initial-empty    206.12 vs    204.70    583.46 vs    571.89      0.00 vs      0.00      3.21 vs      3.30
+dflash-cache-off   shared-long        1 initial-empty     53.61 vs     53.51    338.86 vs    341.29      0.00 vs      0.00      2.17 vs      2.17
+dflash-cache-off   shared-long        8 initial-empty     71.32 vs     70.98   2431.25 vs   2427.44      0.00 vs      0.00      2.25 vs      2.25
+dflash-cache-off   unique-decode      1 initial-empty    163.22 vs    163.35     34.26 vs     34.35      0.00 vs      0.00      2.81 vs      2.81
+dflash-cache-off   unique-decode      8 initial-empty    791.22 vs    748.59    171.21 vs    168.13      0.00 vs      0.00      2.86 vs      2.81
+dflash-cache-on    capacity-pressure  1 initial-empty     60.23 vs     60.26    344.54 vs    344.33      0.00 vs      0.00      3.00 vs      3.00
+dflash-cache-on    capacity-pressure  1 replay            60.09 vs     60.13    344.76 vs    344.45      0.00 vs      0.00      2.98 vs      2.98
+dflash-cache-on    capacity-pressure  8 initial-empty     81.93 vs     77.75   2133.14 vs   2391.44      0.08 vs      0.03      3.06 vs      3.11
+dflash-cache-on    capacity-pressure  8 replay            75.79 vs     77.27   2393.25 vs   2396.73      0.00 vs      0.03      3.06 vs      3.06
+dflash-cache-on    multiturn-branch   1 initial-empty    151.78 vs    151.53     31.58 vs     31.69      0.70 vs      0.70      3.25 vs      3.25
+dflash-cache-on    multiturn-branch   1 replay           173.84 vs    172.71     17.03 vs     17.15      1.00 vs      1.00      3.25 vs      3.25
+dflash-cache-on    multiturn-branch   8 initial-empty    418.89 vs    432.76    169.33 vs    169.56      0.70 vs      0.70      3.25 vs      3.39
+dflash-cache-on    multiturn-branch   8 replay           744.26 vs    782.36     34.27 vs     35.57      1.00 vs      1.00      3.26 vs      3.38
+dflash-cache-on    shared-long        1 initial-empty    100.90 vs    100.63     21.58 vs     21.56      0.85 vs      0.85      2.19 vs      2.19
+dflash-cache-on    shared-long        1 replay           117.40 vs    116.87     17.56 vs     17.70      1.00 vs      1.00      2.19 vs      2.19
+dflash-cache-on    shared-long        8 initial-empty    290.38 vs    290.01    299.72 vs    295.53      0.85 vs      0.84      2.22 vs      2.27
+dflash-cache-on    shared-long        8 replay           518.60 vs    546.53     42.66 vs     39.84      1.00 vs      1.00      2.24 vs      2.26
+dflash-cache-on    unique-decode      1 initial-empty    162.26 vs    161.88     35.30 vs     35.38      0.02 vs      0.02      2.80 vs      2.80
+dflash-cache-on    unique-decode      1 replay           164.19 vs    163.97     17.09 vs     16.77      1.00 vs      1.00      2.80 vs      2.80
+dflash-cache-on    unique-decode      8 initial-empty    764.44 vs    760.55    189.85 vs    154.59      0.02 vs      0.02      2.80 vs      2.85
+dflash-cache-on    unique-decode      8 replay          1019.47 vs   1018.53     41.77 vs     41.49      1.00 vs      1.00      2.87 vs      2.88
+dspark-cache-off   capacity-pressure  1 initial-empty     61.93 vs     61.87    341.59 vs    341.82      0.00 vs      0.00      3.25 vs      3.25
+dspark-cache-off   capacity-pressure  8 initial-empty     77.41 vs     77.46   2364.40 vs   2331.33      0.00 vs      0.00      3.27 vs      3.25
+dspark-cache-off   multiturn-branch   1 initial-empty    120.90 vs    120.83    116.19 vs    116.47      0.00 vs      0.00      3.64 vs      3.64
+dspark-cache-off   multiturn-branch   8 initial-empty    215.07 vs    216.97    567.55 vs    569.78      0.00 vs      0.00      3.57 vs      3.62
+dspark-cache-off   shared-long        1 initial-empty     62.05 vs     61.88    340.20 vs    340.76      0.00 vs      0.00      3.24 vs      3.24
+dspark-cache-off   shared-long        8 initial-empty     75.00 vs     76.39   2425.61 vs   2352.61      0.00 vs      0.00      3.32 vs      3.30
+dspark-cache-off   unique-decode      1 initial-empty    190.45 vs    189.91     34.49 vs     34.28      0.00 vs      0.00      3.38 vs      3.38
+dspark-cache-off   unique-decode      8 initial-empty    903.10 vs    905.48    146.07 vs    131.86      0.00 vs      0.00      3.29 vs      3.30
+dspark-cache-on    capacity-pressure  1 initial-empty     61.67 vs     61.59    343.39 vs    343.84      0.00 vs      0.00      3.25 vs      3.25
+dspark-cache-on    capacity-pressure  1 replay            61.71 vs     61.56    343.75 vs    344.39      0.00 vs      0.00      3.25 vs      3.25
+dspark-cache-on    capacity-pressure  8 initial-empty     81.38 vs     82.42   2314.04 vs   2121.37      0.06 vs      0.08      3.29 vs      3.33
+dspark-cache-on    capacity-pressure  8 replay            78.86 vs     85.05   2383.76 vs   2245.70      0.03 vs      0.11      3.31 vs      3.31
+dspark-cache-on    multiturn-branch   1 initial-empty    160.61 vs    160.15     31.53 vs     31.67      0.70 vs      0.70      3.58 vs      3.58
+dspark-cache-on    multiturn-branch   1 replay           185.05 vs    184.10     16.85 vs     16.97      1.00 vs      1.00      3.58 vs      3.58
+dspark-cache-on    multiturn-branch   8 initial-empty    475.42 vs    464.78    169.65 vs    169.19      0.70 vs      0.70      3.58 vs      3.54
+dspark-cache-on    multiturn-branch   8 replay           929.00 vs    912.63     35.09 vs     34.24      1.00 vs      1.00      3.53 vs      3.53
+dspark-cache-on    shared-long        1 initial-empty    136.62 vs    136.50     21.38 vs     21.43      0.85 vs      0.85      3.30 vs      3.30
+dspark-cache-on    shared-long        1 replay           168.84 vs    167.88     17.23 vs     17.41      1.00 vs      1.00      3.30 vs      3.30
+dspark-cache-on    shared-long        8 initial-empty    335.72 vs    348.99    333.61 vs    331.97      0.84 vs      0.85      3.28 vs      3.24
+dspark-cache-on    shared-long        8 replay          1034.87 vs    770.25     40.79 vs     39.19      1.00 vs      1.00      3.37 vs      3.28
+dspark-cache-on    unique-decode      1 initial-empty    188.61 vs    188.09     35.31 vs     35.27      0.02 vs      0.02      3.35 vs      3.35
+dspark-cache-on    unique-decode      1 replay           191.06 vs    190.74     17.01 vs     16.77      1.00 vs      1.00      3.35 vs      3.35
+dspark-cache-on    unique-decode      8 initial-empty    923.80 vs    921.80    148.23 vs    149.77      0.02 vs      0.02      3.33 vs      3.33
+dspark-cache-on    unique-decode      8 replay          1288.76 vs   1286.64     40.44 vs     42.11      1.00 vs      1.00      3.37 vs      3.37
+eagle3-cache-off   capacity-pressure  1 initial-empty     55.62 vs     55.65    350.35 vs    350.64      0.00 vs      0.00      2.80 vs      2.80
+eagle3-cache-off   capacity-pressure  8 initial-empty     72.57 vs     72.61   2494.57 vs   2493.70      0.00 vs      0.00      2.84 vs      2.84
+eagle3-cache-off   multiturn-branch   1 initial-empty     94.29 vs     94.48    121.07 vs    119.66      0.00 vs      0.00      2.75 vs      2.75
+eagle3-cache-off   multiturn-branch   8 initial-empty    190.06 vs    186.86    582.43 vs    584.62      0.00 vs      0.00      2.71 vs      2.72
+eagle3-cache-off   shared-long        1 initial-empty     47.44 vs     47.57    348.88 vs    349.21      0.00 vs      0.00      1.93 vs      1.93
+eagle3-cache-off   shared-long        8 initial-empty     63.81 vs     63.58   2748.00 vs   2751.72      0.00 vs      0.00      1.98 vs      1.98
+eagle3-cache-off   unique-decode      1 initial-empty    129.34 vs    130.09     35.48 vs     35.52      0.00 vs      0.00      2.53 vs      2.53
+eagle3-cache-off   unique-decode      8 initial-empty    642.69 vs    640.63     78.73 vs     96.12      0.00 vs      0.00      2.49 vs      2.47
+eagle3-cache-on    capacity-pressure  1 initial-empty     55.75 vs     55.76    352.46 vs    353.00      0.00 vs      0.00      2.84 vs      2.84
+eagle3-cache-on    capacity-pressure  1 replay            55.87 vs     55.81    352.98 vs    353.12      0.00 vs      0.00      2.85 vs      2.85
+eagle3-cache-on    capacity-pressure  8 initial-empty     84.07 vs     77.32   1845.63 vs   2327.04      0.16 vs      0.08      2.84 vs      2.87
+eagle3-cache-on    capacity-pressure  8 replay            78.73 vs     83.63   2352.27 vs   2257.65      0.11 vs      0.16      2.84 vs      2.84
+eagle3-cache-on    multiturn-branch   1 initial-empty    115.60 vs    115.40     32.84 vs     32.92      0.70 vs      0.70      2.65 vs      2.65
+eagle3-cache-on    multiturn-branch   1 replay           126.72 vs    126.55     18.73 vs     18.79      1.00 vs      1.00      2.64 vs      2.64
+eagle3-cache-on    multiturn-branch   8 initial-empty    399.17 vs    390.64    173.41 vs    173.27      0.70 vs      0.70      2.72 vs      2.70
+eagle3-cache-on    multiturn-branch   8 replay           680.48 vs    678.78     37.07 vs     37.80      1.00 vs      1.00      2.65 vs      2.72
+eagle3-cache-on    shared-long        1 initial-empty     82.56 vs     81.85     22.30 vs     22.52      0.85 vs      0.85      1.93 vs      1.93
+eagle3-cache-on    shared-long        1 replay            92.86 vs     92.41     19.32 vs     19.21      1.00 vs      1.00      1.92 vs      1.92
+eagle3-cache-on    shared-long        8 initial-empty    256.23 vs    252.56    295.40 vs    293.83      0.84 vs      0.84      1.97 vs      1.96
+eagle3-cache-on    shared-long        8 replay           548.35 vs    543.52     44.46 vs     45.33      1.00 vs      1.00      1.97 vs      1.95
+eagle3-cache-on    unique-decode      1 initial-empty    129.17 vs    128.82     36.50 vs     36.52      0.02 vs      0.02      2.51 vs      2.51
+eagle3-cache-on    unique-decode      1 replay           131.75 vs    131.23     18.60 vs     18.70      0.99 vs      0.99      2.53 vs      2.53
+eagle3-cache-on    unique-decode      8 initial-empty    656.24 vs    636.14    115.08 vs     84.60      0.02 vs      0.02      2.54 vs      2.55
+eagle3-cache-on    unique-decode      8 replay           874.36 vs    868.11     37.71 vs     44.00      0.99 vs      0.99      2.52 vs      2.53
+plain-cache-off    capacity-pressure  1 initial-empty     44.65 vs     44.71    334.88 vs    335.12      0.00 vs      0.00                    n/a
+plain-cache-off    capacity-pressure  8 initial-empty     67.06 vs     67.08   2442.82 vs   2441.38      0.00 vs      0.00                    n/a
+plain-cache-off    multiturn-branch   1 initial-empty     66.36 vs     66.38    115.23 vs    113.62      0.00 vs      0.00                    n/a
+plain-cache-off    multiturn-branch   8 initial-empty    151.32 vs    150.81    572.29 vs    572.36      0.00 vs      0.00                    n/a
+plain-cache-off    shared-long        1 initial-empty     44.93 vs     44.82    332.56 vs    333.04      0.00 vs      0.00                    n/a
+plain-cache-off    shared-long        8 initial-empty     65.18 vs     65.39   2436.62 vs   2424.01      0.00 vs      0.00                    n/a
+plain-cache-off    unique-decode      1 initial-empty     83.64 vs     83.40     33.62 vs     33.64      0.00 vs      0.00                    n/a
+plain-cache-off    unique-decode      8 initial-empty    395.19 vs    394.80    184.65 vs    178.81      0.00 vs      0.00                    n/a
+plain-cache-on     capacity-pressure  1 initial-empty     44.55 vs     44.51    338.18 vs    338.64      0.00 vs      0.00                    n/a
+plain-cache-on     capacity-pressure  1 replay            44.58 vs     44.42    338.32 vs    338.79      0.00 vs      0.00                    n/a
+plain-cache-on     capacity-pressure  8 initial-empty     73.39 vs     70.55   2207.40 vs   2378.96      0.13 vs      0.08                    n/a
+plain-cache-on     capacity-pressure  8 replay            70.37 vs     67.83   2462.57 vs   2457.67      0.08 vs      0.03                    n/a
+plain-cache-on     multiturn-branch   1 initial-empty     77.09 vs     76.96     31.11 vs     31.15      0.70 vs      0.70                    n/a
+plain-cache-on     multiturn-branch   1 replay            82.22 vs     82.07     16.46 vs     16.37      1.00 vs      1.00                    n/a
+plain-cache-on     multiturn-branch   8 initial-empty    317.54 vs    317.22    165.89 vs    166.17      0.70 vs      0.70                    n/a
+plain-cache-on     multiturn-branch   8 replay           544.51 vs    544.45     33.35 vs     33.57      1.00 vs      1.00                    n/a
+plain-cache-on     shared-long        1 initial-empty     72.65 vs     72.52     21.04 vs     21.02      0.85 vs      0.85                    n/a
+plain-cache-on     shared-long        1 replay            80.58 vs     80.64     17.01 vs     16.74      1.00 vs      1.00                    n/a
+plain-cache-on     shared-long        8 initial-empty    242.98 vs    242.30    294.49 vs    295.27      0.85 vs      0.85                    n/a
+plain-cache-on     shared-long        8 replay           543.67 vs    544.68     39.33 vs     37.77      1.00 vs      1.00                    n/a
+plain-cache-on     unique-decode      1 initial-empty     83.53 vs     83.36     34.65 vs     34.79      0.02 vs      0.02                    n/a
+plain-cache-on     unique-decode      1 replay            84.05 vs     83.85     16.39 vs     16.27      1.00 vs      1.00                    n/a
+plain-cache-on     unique-decode      8 initial-empty    394.04 vs    394.25    188.92 vs    187.96      0.02 vs      0.02                    n/a
+plain-cache-on     unique-decode      8 replay           601.56 vs    602.13     35.73 vs     34.10      1.00 vs      1.00                    n/a
+
+mine/theirs ratio (median, min, max):
+  output_tokens_s                  1.002 0.927 1.344
+  ttft_median_ms                   0.999 0.793 1.360
+  spec_output_tokens_per_verify    1.000 0.959 1.026
