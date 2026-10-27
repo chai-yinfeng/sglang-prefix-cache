@@ -1,0 +1,305 @@
+{
+  "date": "2026-10-27",
+  "environment": {
+    "gpu": "RTX5090 32GB",
+    "os_kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "torch": "2.14.1+cu130",
+    "cuda_runtime": "13.0"
+  },
+  "base_commit": "baa9befa381511cd4d56f83980951e5a45fffc6d",
+  "layer_first_patch_commit": "00fd51eab3",
+  "native_transfer_probes": [
+    {
+      "artifact": "small-registered.log",
+      "case": {
+        "page_size": 16,
+        "layers": 2,
+        "element_dim": 512,
+        "pages": 1,
+        "allocator": "registered",
+        "disable_tma": false
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 32768,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "3f58541088d53d7f962e33e7f9203987e30d21190f9ce00cab6ce47b89a5f460"
+    },
+    {
+      "artifact": "target-registered.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 1,
+        "allocator": "registered",
+        "disable_tma": false
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "8e7cc50c5c9f400af3c5aa4f1840949bda43e91dc35b9c97c61f578ab005ca37"
+    },
+    {
+      "artifact": "large-registered.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 112,
+        "allocator": "registered",
+        "disable_tma": false
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "a3d35deccae90e9dfba11541101e9d84aea453d716f3dadf20bc1f3f4e16b581"
+    },
+    {
+      "artifact": "default-registered-blocking.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 6,
+        "allocator": "registered",
+        "disable_tma": false,
+        "stream": "default"
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "9b1f51ac7daa7fc2218ed6ca9c60acc2c4d6d240275596003b2c27f1559d9e4c"
+    },
+    {
+      "artifact": "nondefault-registered.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 6,
+        "allocator": "registered",
+        "disable_tma": false,
+        "stream": "nondefault"
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "failed",
+      "failure": "CUDA700 after D2H backup",
+      "artifact_sha256": "3d8c2ff03484b217d5b70eb1e84f1512e4edfa29e1a45754232fa92780700120"
+    },
+    {
+      "artifact": "nondefault-ffi-registered.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 6,
+        "allocator": "registered",
+        "disable_tma": false,
+        "stream": "nondefault",
+        "ffi_stream": true
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "failed",
+      "failure": "CUDA700 after D2H backup",
+      "artifact_sha256": "4d0713bebb0bff52664a18384db664b0ccbdb5b00ed8a200969c4bfaf9fc99d3"
+    },
+    {
+      "artifact": "nondefault-small-registered.log",
+      "case": {
+        "page_size": 16,
+        "layers": 2,
+        "element_dim": 512,
+        "pages": 6,
+        "allocator": "registered",
+        "disable_tma": false,
+        "stream": "nondefault",
+        "ffi_stream": false
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 32768,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "3a31b999efdafb5c6171f8df6ba300185e883b445ee95473129026b0b0c5cced"
+    },
+    {
+      "artifact": "nondefault-pinned.log",
+      "case": {
+        "page_size": 64,
+        "layers": 36,
+        "element_dim": 1024,
+        "pages": 6,
+        "allocator": "pinned",
+        "disable_tma": false,
+        "stream": "nondefault",
+        "ffi_stream": false
+      },
+      "torch": "2.14.1+cu130",
+      "cuda": "13.0",
+      "one_k_or_v_page_bytes": 4718592,
+      "status": "passed",
+      "failure": null,
+      "artifact_sha256": "299a4d5567a9d6c3054e0b169f22af14045d7856fd21363d4f8e416d9c1b295d"
+    }
+  ],
+  "standalone_cuda_runtime_probes": [
+    {
+      "case": [
+        "batch",
+        "registered",
+        "default"
+      ],
+      "process_exit_code": 1,
+      "api_trace": [
+        "cudaMalloc: 0 (no error)",
+        "cudaHostRegister: 0 (no error)",
+        "cudaMemsetAsync: 0 (no error)",
+        "producer sync: 0 (no error)",
+        "cudaMemcpyBatchAsync: 1 (invalid argument)"
+      ],
+      "artifact_sha256": "911d5428f8ac5b95d3dd089517412ecd184c8344376dde81bde0715b59a54ed8"
+    },
+    {
+      "case": [
+        "batch",
+        "registered",
+        "nondefault"
+      ],
+      "process_exit_code": 1,
+      "api_trace": [
+        "cudaMalloc: 0 (no error)",
+        "cudaHostRegister: 0 (no error)",
+        "cudaStreamCreate: 0 (no error)",
+        "cudaMemsetAsync: 0 (no error)",
+        "producer sync: 0 (no error)",
+        "cudaMemcpyBatchAsync: 0 (no error)",
+        "copy sync: 700 (an illegal memory access was encountered)"
+      ],
+      "artifact_sha256": "2bbc18c981e8cdd248e60c93e06c6019303409406412fb4ed32264eaf030a139"
+    },
+    {
+      "case": [
+        "direct",
+        "registered",
+        "nondefault"
+      ],
+      "process_exit_code": 0,
+      "api_trace": [
+        "cudaMalloc: 0 (no error)",
+        "cudaHostRegister: 0 (no error)",
+        "cudaStreamCreate: 0 (no error)",
+        "cudaMemsetAsync: 0 (no error)",
+        "producer sync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "cudaMemcpyAsync: 0 (no error)",
+        "copy sync: 0 (no error)",
+        "PASS: every destination byte equals reference"
+      ],
+      "artifact_sha256": "97dcac1fe2f3becb7c0a806e5b90eacef00a7755212a93b7d0a50d2f63580f10"
+    },
+    {
+      "case": [
+        "batch",
+        "pinned",
+        "nondefault"
+      ],
+      "process_exit_code": 0,
+      "api_trace": [
+        "cudaMalloc: 0 (no error)",
+        "cudaMallocHost: 0 (no error)",
+        "cudaStreamCreate: 0 (no error)",
+        "cudaMemsetAsync: 0 (no error)",
+        "producer sync: 0 (no error)",
+        "cudaMemcpyBatchAsync: 0 (no error)",
+        "copy sync: 0 (no error)",
+        "PASS: every destination byte equals reference"
+      ],
+      "artifact_sha256": "37cda73e8cc69272c1835729722de37e424370b2d82b3d024f3cff4cf07b7108"
+    }
+  ],
+  "mamba_and_patch_checks": [
+    {
+      "artifact": "mamba-layer-first-constructor.json",
+      "status": "native_layout_rejected",
+      "counts_or_geometry": null,
+      "artifact_sha256": "48c196786755e07df01c43329774a4be7b19723f215ebe59812814ac6d4da753"
+    },
+    {
+      "artifact": "mamba-native-page-first-direct.log",
+      "status": "failed_cuda700_then_cleanup_typeerror",
+      "counts_or_geometry": null,
+      "artifact_sha256": "134b1dd814d4efaf3905463ce4fe527c40a3ea060c1be87bc2bf90fa6fe882a0"
+    },
+    {
+      "artifact": "mamba-layer-first-roundtrip.log",
+      "status": "failed_before_empty_tensor_guard",
+      "counts_or_geometry": {
+        "passed": 2,
+        "failed": 1
+      },
+      "artifact_sha256": "eb55395e702d4eb60ff9499de19a0e58fb386baaf601aef7f97a6b91bf768147"
+    },
+    {
+      "artifact": "mamba-layer-first-roundtrip-v2.log",
+      "status": "passed",
+      "counts_or_geometry": {
+        "passed": 6,
+        "failed": 0
+      },
+      "artifact_sha256": "7b532a6c04a55c56771e54b3d7fc3e6fa902ea357bbc9dcb13d493197e527959"
+    },
+    {
+      "artifact": "mamba-cpu-unit.log",
+      "status": "passed",
+      "counts_or_geometry": {
+        "passed": 11,
+        "subtests_passed": 3
+      },
+      "artifact_sha256": "7a1466208944669be7746434191eb3d1c4513f16012b40b0f42c374904f1df05"
+    },
+    {
+      "artifact": "hybrid-model-geometry-roundtrip.log",
+      "status": "passed_bitwise",
+      "counts_or_geometry": {
+        "target_layers": 16,
+        "draft_layers": 5,
+        "mamba_layers": 48,
+        "state_bytes_per_slot": 78446592
+      },
+      "artifact_sha256": "5a35e341c4ae76f8eda3c65276cf100ba7e04fb7025ba8436d8a6b42442d1001"
+    },
+    {
+      "artifact": "layer-first-precommit.log",
+      "status": "passed",
+      "counts_or_geometry": null,
+      "artifact_sha256": "a711af74f34d45c9f9f47728727691be54ead689bb5705a26649f17f8cc22d48"
+    }
+  ],
+  "tool_limitations": {
+    "compute_sanitizer": "Full-kernel attempt reported WDDM debugger initialization failure and device unsupported; no valid clean memcheck report. First tool invocation had an invalid filter and never launched the model.",
+    "mintlify": "CLI absent; broken-links and validate commands returned127."
+  },
+  "interpretation": "Registered host memory + batch-copy fails outside SGLang/PyTorch on this machine; not a claim about all WSL/CUDA13 systems. Default-stream success can be fallback, not batch-copy success. No TMA-off or multi-registration validation."
+}

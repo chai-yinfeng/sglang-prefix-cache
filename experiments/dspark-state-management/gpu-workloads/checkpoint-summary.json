@@ -1,0 +1,602 @@
+{
+  "runs": [
+    {
+      "state_slots": 8,
+      "run": "qwen38-k16-s8-r2-checkpoint-isolated-v1",
+      "requests": 82,
+      "gpu_peak_gib": 29.888408660888672,
+      "sampled_min_host_available_gib": 40.18535614013672,
+      "identical_input_comparisons": 32,
+      "output_differences": 0,
+      "cases": [
+        {
+          "case": "probe0-session-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe0-session-branches",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-single",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-single-branch",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-two-forward",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-two-reverse",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        {
+          "case": "probe0-inactive-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1024
+            ]
+          ]
+        },
+        {
+          "case": "probe0-inactive-extended",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1536
+            ]
+          ]
+        },
+        {
+          "case": "probe1-session-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe1-session-branches",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-single",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-single-branch",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-two-forward",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-two-reverse",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        {
+          "case": "probe1-inactive-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1024
+            ]
+          ]
+        },
+        {
+          "case": "probe1-inactive-extended",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1536
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count2",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count4",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count6",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      ],
+      "artifact_hashes_verified": true
+    },
+    {
+      "state_slots": 12,
+      "run": "qwen38-k16-s12-r2-checkpoint-isolated-v1",
+      "requests": 82,
+      "gpu_peak_gib": 30.181377410888672,
+      "sampled_min_host_available_gib": 40.182621002197266,
+      "identical_input_comparisons": 32,
+      "output_differences": 0,
+      "cases": [
+        {
+          "case": "probe0-session-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe0-session-branches",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-single",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-single-branch",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-two-forward",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-shared-two-reverse",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe0-inactive-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1024
+            ]
+          ]
+        },
+        {
+          "case": "probe0-inactive-extended",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1536
+            ]
+          ]
+        },
+        {
+          "case": "probe1-session-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe1-session-branches",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ],
+            [
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-single",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-single-branch",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-two-forward",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-shared-two-reverse",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              3072
+            ],
+            [
+              3072
+            ]
+          ]
+        },
+        {
+          "case": "probe1-inactive-identical",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1024
+            ]
+          ]
+        },
+        {
+          "case": "probe1-inactive-extended",
+          "cached_tokens_by_step": [
+            [
+              0
+            ],
+            [
+              1536
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count2",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0
+            ],
+            [
+              2048,
+              2048
+            ],
+            [
+              2048,
+              2048
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count4",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "case": "sweep-session-count6",
+          "cached_tokens_by_step": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      ],
+      "artifact_hashes_verified": true
+    }
+  ]
+}

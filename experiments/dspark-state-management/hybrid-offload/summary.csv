@@ -1,0 +1,6 @@
+run,repeat,status,gpu_only,cached_restore,loaded_kv_tokens,loaded_mamba_slots,loaded_bytes,all_anchor_outputs_equal
+qwen38-k8-s12-direct-lf-baseline-v1,0,FAILED,False,3136,3136.0,2.0,291766272.0,False
+qwen38-k8-s12-direct-lf-boundary-control-v1,0,DIAGNOSTIC_COMPLETE,False,3136,3136.0,2.0,291766272.0,False
+qwen38-k8-s12-direct-lf-boundary-control-v1,1,DIAGNOSTIC_COMPLETE,False,3136,3136.0,2.0,291766272.0,False
+qwen38-k8-s12-direct-lf-gpu-only-boundary-v1,0,DIAGNOSTIC_COMPLETE,True,0,0,0,0,False
+qwen38-k8-s12-direct-lf-gpu-only-boundary-v1,1,DIAGNOSTIC_COMPLETE,True,0,0,0,0,False

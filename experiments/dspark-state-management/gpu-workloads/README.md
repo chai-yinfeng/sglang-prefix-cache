@@ -55,3 +55,24 @@ work_dirs/qwen3-8b-prefix-baseline-v0.5.22/.venv/bin/python \
 
 原始目录不会被覆盖；失败尝试保留 FAILED.json 和日志。Qwen3-k8-baseline-v1 的首次 repeat 与下载尾段重叠，只用于校准；另行复测用于正式容量对照。其余运行必须在下载结束后启动。
 RESULTS.md 为可重复生成的观测表；因果分析与范围限制另存 ANALYSIS.md。
+
+## Checkpoint 独立探针
+
+`checkpoint-isolated-v1` 是解释 cache miss 的机制实验，不进入上面的四负载表。固定 16K KV、max-running=2、原有 dtype/backend，分别对照 8/12 state slots。
+
+- 单会话 2176 输入：相同输入连续重复；两个 suffix 分支交替。
+- 单个 3200-token 共享输入：连续重复；同主前缀换分支。
+- 两个独立 3200-token 输入：`A B A B` 与 `A B B A`，分别观察复访顺序。
+- 1536-token inactive 输入：`P P` 与 `P (P+64)` 从各自 flush 后重新播种，避免前一探针改变后一探针的 cache。
+- 前八类各独立 flush、两次重复；再对 2/4/6 会话各做三轮串行轮转。每个配置共 82 个测量请求。
+
+每个请求/步骤保留原始 cached_tokens、输出、metrics、资源采样；`checkpoint-plan.json` 冻结实际执行顺序和完整 token IDs，`checkpoint-flushes.json` 记录隔离操作，`checkpoint-results.json` 为简表。原生 Prometheus gauges 仍可能滞后，不把它们当作每个 checkpoint 的原子事件日志。
+
+每次启动前重新检查共享 GPU 的显存、利用率、进程及主机 RAM/swap；有其他计算任务或占用归属不明时不启动。两档分开启动，以便中间再次确认资源。例：
+
+```bash
+work_dirs/qwen3-8b-prefix-baseline-v0.5.22/.venv/bin/python \
+  work_dirs/dspark-state-management/gpu_workloads.py \
+  --profiles qwen38-k16-s8-r2 --checkpoint-probe --repeats 2 \
+  --attempt checkpoint-isolated-v1
+```

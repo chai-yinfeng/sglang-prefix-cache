@@ -1,6 +1,6 @@
 # 调查与 pilot 结果
 
-源码固定为 v0.5.22 / baa9befa381511cd4d56f83980951e5a45fffc6d。未修改 runtime。
+本页8B历史机制pilot与原四负载固定为 v0.5.22 / baa9befa381511cd4d56f83980951e5a45fffc6d，当时未改runtime。27B新增LF补丁和输出检查失败详情见 CPU_OFFLOAD.md，不混入本页历史统计。
 
 ## 已确认能力
 
@@ -19,7 +19,7 @@
 | 8192 | 1.281250 | 12288 | 8192 | 1984 → 0 | 一致 |
 | 16384 | 2.562500 | 24576 | 12288 | 1984 → 0 | 一致 |
 
-已完成 30 个测量请求；warmup 单独保存。相同输出仅覆盖这些 anchor，不替代完整正确性验证。
+已完成 48 个测量请求；warmup 单独保存。相同输出仅覆盖这些 anchor，不替代完整正确性验证。
 
 payload 为每个有效 slot 的理论字节数乘以配置容量；实际池含 padding，原始分配日志和 server_info 已保留。未测量进程严格峰值显存，不把 mem-fraction-static 当作硬上限。
 
@@ -27,10 +27,16 @@ payload 为每个有效 slot 的理论字节数乘以配置容量；实际池含
 
 - `qwen3-8b-4096-cpu-small-direct`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
 - `qwen3-8b-8192-cpu-direct-blocking`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
+- `qwen3-8b-8192-cpu-kernel-page-first-memcheck-v1`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
+- `qwen3-8b-8192-cpu-kernel-page-first-memcheck-v2`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
+- `qwen3-8b-8192-cpu-kernel-page-first-sync-diag-v1`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
+- `qwen3-8b-8192-cpu-kernel-page-first-v2`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
 - `qwen3-8b-8192-cpu-path-fixed`：failed；CUDA illegal memory access before pressure/load-back measurement。日志保留。
 - `qwen3-8b-8192-gpu`：failed；missing ninja in launch PATH。日志保留。
+- `qwen3-8b-8192-cpu-direct-layer-first-async-v1`：passed；回载 1984 KV tokens / 333185024 bytes，即 167936 bytes/token，核对两侧合计 167936 bytes/token。
+- `qwen3-8b-8192-cpu-direct-layer-first-v1`：passed；回载 1984 KV tokens / 333185024 bytes，即 167936 bytes/token，核对两侧合计 167936 bytes/token。
 
-当前没有通过的本机 CPU load-back probe；不能声称 CPU offload 在本机可用。失败发生在压力/回载测量之前，未定位为 sidecar、传输内核或驱动的具体根因；direct IO 诊断不是性能数据。
+当前通过配置为原生 direct/layer_first（blocking及正常异步）；默认 kernel/page_first 的registered host memory + batch-copy故障已独立复现，batch路径未改。27B Mamba LF支持已在本地00fd51eab3扩展，联合回载的传输与字节检查通过、端到端输出检查失败；GPU-only对照也有checkpoint复用分叉。详情见 [CPU_OFFLOAD.md](CPU_OFFLOAD.md)，不能以8B结论替代27B正确性。
 
 ## 四类 GPU 负载
 
@@ -43,4 +49,4 @@ payload 为每个有效 slot 的理论字节数乘以配置容量；实际池含
 - Qwen3.5-4B SWA DSpark：not-run，Speculators 适配尚未实施。
 - hidden-only 与独立 draft CPU 策略：not implemented；需要先决定数据所有权和恢复边界。
 
-本目录被仓库现有 .gitignore 排除，按 work_dirs 交付，未强制加入 commit、未推送。完整能力分析见 README.md；机器可读证据见 audit.json。
+原始实验目录 work_dirs/dspark-state-management 被 .gitignore 排除；本目录归档结果摘要。完整能力分析见 README.md，机器可读机制摘要见 pilot-summary.json；原始audit/logs仍在work_dirs。

@@ -1,0 +1,23 @@
+{
+  "qwen38-smoke-calibration-v1": {
+    "status": "failed",
+    "cause": "Configuration assertion: extra_buffer_lazy requires overlap scheduling, while this campaign disables overlap.",
+    "resolution": "Use existing extra_buffer strategy; preserve no-overlap baseline."
+  },
+  "qwen38-smoke-calibration-extra-buffer": {
+    "status": "failed",
+    "cause": "Memory sizing rejected the static budget after persistent and intermediate SSM reservations. No timed requests ran.",
+    "resolution": "Keep explicit token/state caps, increase mem-fraction-static and reduce prefill chunk to 512."
+  },
+  "qwen38-replay-smoke-calibration-replay": {
+    "status": "failed",
+    "cause": "Current attention_hook validation rejects ReplaySSM with DSPARK/DFLASH on non-KDA targets; Qwen3.8 is GDN.",
+    "resolution": "Retain snapshot verify; do not claim ReplaySSM support from the generic linear-chain flag description."
+  },
+  "qwen38-smoke-calibration-budget-v2": {
+    "status": "stopped",
+    "cause": "Observed severe host memory and swap pressure during first FlashInfer autotuning/compilation; own server group was terminated.",
+    "observation": "One host snapshot showed about 46 GiB RAM used and 15 GiB swap used. This is not a precisely sampled peak or an identified compiler root cause.",
+    "resolution": "Use existing --disable-flashinfer-autotune plus MAX_JOBS=2, FLASHINFER_NVCC_THREADS=1 and TORCHINDUCTOR_COMPILE_THREADS=1 for every formal Qwen3.8 profile."
+  }
+}

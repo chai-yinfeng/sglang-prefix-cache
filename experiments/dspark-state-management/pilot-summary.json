@@ -1,0 +1,379 @@
+{
+  "scope": "Historical 8B mechanism probes, excluded from formal workloads; source baa9befa38",
+  "passed": [
+    {
+      "capacity": 16384,
+      "mode": "gpu",
+      "status": "passed",
+      "fixture_sha256": "8ac8b81eb71583e5a115ed3d2b848db6c1f71f394aadac0c6548cb346b660810",
+      "theoretical_target_kv_bytes": 2415919104,
+      "theoretical_draft_kv_bytes": 335544320,
+      "pressure_input_tokens": 24576,
+      "pressure_input_over_capacity": 1.5,
+      "pressure_evicted_tokens": 12288.0,
+      "cached_tokens_details": null,
+      "restored_cached_tokens": 0,
+      "load_back_kv_tokens": 0.0,
+      "load_back_bytes": 0.0,
+      "load_bytes_per_kv_token": null,
+      "expected_target_and_draft_bytes_per_token": 167936,
+      "cold_hot_ids_equal": true,
+      "hot_restored_ids_equal": true,
+      "restored_spec_meta": {
+        "spec_accept_rate": 0.48214285714285715,
+        "spec_accept_length": 4.0,
+        "spec_num_correct_drafts": 27,
+        "spec_num_proposed_drafts": 56,
+        "spec_verify_ct": 8,
+        "spec_correct_drafts_histogram": [
+          1,
+          1,
+          0,
+          2,
+          1,
+          2,
+          1
+        ]
+      },
+      "elapsed_s": 25.859459720086306,
+      "scope": "capacity/load-back mechanism probe, not performance or general correctness certification",
+      "run": "qwen3-8b-16384-gpu-capacity-sweep",
+      "anchor_phases": {
+        "anchor-cold": {
+          "cached_tokens": 0,
+          "ttft_ms": 155.62082827091217,
+          "latency_ms": 299.63806131854653
+        },
+        "anchor-hot": {
+          "cached_tokens": 1984,
+          "ttft_ms": 28.1372107565403,
+          "latency_ms": 168.52470487356186
+        },
+        "anchor-after-pressure": {
+          "cached_tokens": 0,
+          "ttft_ms": 152.86643989384174,
+          "latency_ms": 292.9729069583118
+        }
+      },
+      "measured_requests": 15,
+      "allocation_log": [
+        "[2026-10-26 23:44:27] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 16384, K size: 1.13 GB, V size: 1.13 GB",
+        "[2026-10-26 23:44:27] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 16384, K size: 0.16 GB, V size: 0.16 GB",
+        "[2026-10-26 23:44:27] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>,). Tree Core: RustUnifiedTreeCore",
+        "[2026-10-26 23:44:27] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=False"
+      ]
+    },
+    {
+      "capacity": 4096,
+      "mode": "gpu",
+      "status": "passed",
+      "fixture_sha256": "8ac8b81eb71583e5a115ed3d2b848db6c1f71f394aadac0c6548cb346b660810",
+      "theoretical_target_kv_bytes": 603979776,
+      "theoretical_draft_kv_bytes": 83886080,
+      "pressure_input_tokens": 6144,
+      "pressure_input_over_capacity": 1.5,
+      "pressure_evicted_tokens": 6144.0,
+      "cached_tokens_details": null,
+      "restored_cached_tokens": 0,
+      "load_back_kv_tokens": 0.0,
+      "load_back_bytes": 0.0,
+      "load_bytes_per_kv_token": null,
+      "expected_target_and_draft_bytes_per_token": 167936,
+      "cold_hot_ids_equal": true,
+      "hot_restored_ids_equal": true,
+      "restored_spec_meta": {
+        "spec_accept_rate": 0.48214285714285715,
+        "spec_accept_length": 4.0,
+        "spec_num_correct_drafts": 27,
+        "spec_num_proposed_drafts": 56,
+        "spec_verify_ct": 8,
+        "spec_correct_drafts_histogram": [
+          1,
+          1,
+          0,
+          2,
+          1,
+          2,
+          1
+        ]
+      },
+      "elapsed_s": 23.035439423285425,
+      "scope": "capacity/load-back mechanism probe, not performance or general correctness certification",
+      "run": "qwen3-8b-4096-gpu-capacity-sweep",
+      "anchor_phases": {
+        "anchor-cold": {
+          "cached_tokens": 0,
+          "ttft_ms": 156.4211999066174,
+          "latency_ms": 302.2158541716635
+        },
+        "anchor-hot": {
+          "cached_tokens": 1984,
+          "ttft_ms": 28.788848780095577,
+          "latency_ms": 169.01793284341693
+        },
+        "anchor-after-pressure": {
+          "cached_tokens": 0,
+          "ttft_ms": 153.19575183093548,
+          "latency_ms": 293.21204777807
+        }
+      },
+      "measured_requests": 6,
+      "allocation_log": [
+        "[2026-10-26 23:43:59] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 4096, K size: 0.29 GB, V size: 0.29 GB",
+        "[2026-10-26 23:43:59] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 4096, K size: 0.04 GB, V size: 0.04 GB",
+        "[2026-10-26 23:43:59] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>,). Tree Core: RustUnifiedTreeCore",
+        "[2026-10-26 23:43:59] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=False"
+      ]
+    },
+    {
+      "capacity": 8192,
+      "mode": "cpu",
+      "status": "passed",
+      "fixture_sha256": "adff88b4ff2de21a84742c665f45fac4907988579a91faac8119ad1b02da07f0",
+      "theoretical_target_kv_bytes": 1207959552,
+      "theoretical_draft_kv_bytes": 167772160,
+      "pressure_input_tokens": 12288,
+      "pressure_input_over_capacity": 1.5,
+      "pressure_evicted_tokens": 8192.0,
+      "cached_tokens_details": {
+        "device": 0,
+        "host": 1984
+      },
+      "restored_cached_tokens": 1984,
+      "load_back_kv_tokens": 1984.0,
+      "load_back_bytes": 333185024.0,
+      "load_bytes_per_kv_token": 167936.0,
+      "expected_target_and_draft_bytes_per_token": 167936,
+      "cold_hot_ids_equal": true,
+      "hot_restored_ids_equal": true,
+      "restored_spec_meta": {
+        "spec_accept_rate": 0.48214285714285715,
+        "spec_accept_length": 4.0,
+        "spec_num_correct_drafts": 27,
+        "spec_num_proposed_drafts": 56,
+        "spec_verify_ct": 8,
+        "spec_correct_drafts_histogram": [
+          1,
+          1,
+          0,
+          2,
+          1,
+          2,
+          1
+        ]
+      },
+      "elapsed_s": 27.12887105392292,
+      "scope": "capacity/load-back mechanism probe, not performance or general correctness certification",
+      "run": "qwen3-8b-8192-cpu-direct-layer-first-async-v1",
+      "anchor_phases": {
+        "anchor-cold": {
+          "cached_tokens": 0,
+          "ttft_ms": 156.42451914027333,
+          "latency_ms": 311.00041093304753
+        },
+        "anchor-hot": {
+          "cached_tokens": 1984,
+          "ttft_ms": 33.434743992984295,
+          "latency_ms": 172.9833516292274
+        },
+        "anchor-after-pressure": {
+          "cached_tokens": 1984,
+          "ttft_ms": 27.356290258467197,
+          "latency_ms": 169.51617039740086
+        }
+      },
+      "measured_requests": 9,
+      "allocation_log": [
+        "[2026-10-27 16:46:48] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.57 GB, V size: 0.57 GB",
+        "[2026-10-27 16:46:48] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-27 16:46:49] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>,). Tree Core: RustUnifiedTreeCore",
+        "[2026-10-27 16:46:49] Allocating kv hierarchical KV host pool: 24640 tokens, 3.63 GB host memory.",
+        "[2026-10-27 16:46:52] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=True",
+        "[2026-10-27 16:46:52] Allocating draft hierarchical KV host pool: 24704 tokens, 0.51 GB host memory."
+      ]
+    },
+    {
+      "capacity": 8192,
+      "mode": "cpu",
+      "status": "passed",
+      "fixture_sha256": "adff88b4ff2de21a84742c665f45fac4907988579a91faac8119ad1b02da07f0",
+      "theoretical_target_kv_bytes": 1207959552,
+      "theoretical_draft_kv_bytes": 167772160,
+      "pressure_input_tokens": 12288,
+      "pressure_input_over_capacity": 1.5,
+      "pressure_evicted_tokens": 8192.0,
+      "cached_tokens_details": {
+        "device": 0,
+        "host": 1984
+      },
+      "restored_cached_tokens": 1984,
+      "load_back_kv_tokens": 1984.0,
+      "load_back_bytes": 333185024.0,
+      "load_bytes_per_kv_token": 167936.0,
+      "expected_target_and_draft_bytes_per_token": 167936,
+      "cold_hot_ids_equal": true,
+      "hot_restored_ids_equal": true,
+      "restored_spec_meta": {
+        "spec_accept_rate": 0.48214285714285715,
+        "spec_accept_length": 4.0,
+        "spec_num_correct_drafts": 27,
+        "spec_num_proposed_drafts": 56,
+        "spec_verify_ct": 8,
+        "spec_correct_drafts_histogram": [
+          1,
+          1,
+          0,
+          2,
+          1,
+          2,
+          1
+        ]
+      },
+      "elapsed_s": 42.19599501974881,
+      "scope": "capacity/load-back mechanism probe, not performance or general correctness certification",
+      "run": "qwen3-8b-8192-cpu-direct-layer-first-v1",
+      "anchor_phases": {
+        "anchor-cold": {
+          "cached_tokens": 0,
+          "ttft_ms": 194.78464545682073,
+          "latency_ms": 587.8711151890457
+        },
+        "anchor-hot": {
+          "cached_tokens": 1984,
+          "ttft_ms": 65.66765299066901,
+          "latency_ms": 446.9560361467302
+        },
+        "anchor-after-pressure": {
+          "cached_tokens": 1984,
+          "ttft_ms": 59.36226807534695,
+          "latency_ms": 450.60726441442966
+        }
+      },
+      "measured_requests": 9,
+      "allocation_log": [
+        "[2026-10-27 16:31:21] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.57 GB, V size: 0.57 GB",
+        "[2026-10-27 16:31:21] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-27 16:31:22] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>,). Tree Core: RustUnifiedTreeCore",
+        "[2026-10-27 16:31:22] Allocating kv hierarchical KV host pool: 24640 tokens, 3.63 GB host memory.",
+        "[2026-10-27 16:31:25] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=True",
+        "[2026-10-27 16:31:25] Allocating draft hierarchical KV host pool: 24704 tokens, 0.51 GB host memory."
+      ]
+    },
+    {
+      "capacity": 8192,
+      "mode": "gpu",
+      "status": "passed",
+      "fixture_sha256": "adff88b4ff2de21a84742c665f45fac4907988579a91faac8119ad1b02da07f0",
+      "theoretical_target_kv_bytes": 1207959552,
+      "theoretical_draft_kv_bytes": 167772160,
+      "pressure_input_tokens": 12288,
+      "pressure_input_over_capacity": 1.5,
+      "pressure_evicted_tokens": 8192.0,
+      "cached_tokens_details": null,
+      "restored_cached_tokens": 0,
+      "load_back_kv_tokens": 0.0,
+      "load_back_bytes": 0.0,
+      "load_bytes_per_kv_token": null,
+      "expected_target_and_draft_bytes_per_token": 167936,
+      "cold_hot_ids_equal": true,
+      "hot_restored_ids_equal": true,
+      "restored_spec_meta": {
+        "spec_accept_rate": 0.48214285714285715,
+        "spec_accept_length": 4.0,
+        "spec_num_correct_drafts": 27,
+        "spec_num_proposed_drafts": 56,
+        "spec_verify_ct": 8,
+        "spec_correct_drafts_histogram": [
+          1,
+          1,
+          0,
+          2,
+          1,
+          2,
+          1
+        ]
+      },
+      "elapsed_s": 36.58220073673874,
+      "scope": "capacity/load-back mechanism probe, not performance or general correctness certification",
+      "run": "qwen3-8b-8192-gpu-path-fixed",
+      "anchor_phases": {
+        "anchor-cold": {
+          "cached_tokens": 0,
+          "ttft_ms": 157.10997069254518,
+          "latency_ms": 347.94619493186474
+        },
+        "anchor-hot": {
+          "cached_tokens": 1984,
+          "ttft_ms": 30.395830050110817,
+          "latency_ms": 170.4144049435854
+        },
+        "anchor-after-pressure": {
+          "cached_tokens": 0,
+          "ttft_ms": 153.07966899126768,
+          "latency_ms": 294.34498585760593
+        }
+      },
+      "measured_requests": 9,
+      "allocation_log": [
+        "[2026-10-26 23:35:56] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.57 GB, V size: 0.57 GB",
+        "[2026-10-26 23:35:56] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-26 23:35:57] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>,). Tree Core: RustUnifiedTreeCore",
+        "[2026-10-26 23:35:57] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=False"
+      ]
+    }
+  ],
+  "failed": [
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-4096-cpu-small-direct",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-direct-blocking",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-kernel-page-first-memcheck-v1",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-kernel-page-first-memcheck-v2",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-kernel-page-first-sync-diag-v1",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-kernel-page-first-v2",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-cpu-path-fixed",
+      "diagnostic": "CUDA illegal memory access before pressure/load-back measurement"
+    },
+    {
+      "status": "failed",
+      "error": "AssertionError()",
+      "run": "qwen3-8b-8192-gpu",
+      "diagnostic": "missing ninja in launch PATH"
+    }
+  ],
+  "artifact_hash_checks": {
+    "total": 38,
+    "passed": 38
+  }
+}

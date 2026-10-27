@@ -1,7 +1,9 @@
 # DSpark 状态管理调查与容量校准
 
 源码基线：`baa9befa381511cd4d56f83980951e5a45fffc6d`（v0.5.22）。
-本目录只保存调查、实验脚本及产物，不修改 SGLang runtime，不自动公开发布。
+本目录归档调查、测试结果和分析摘要。历史性能实验未改runtime；27B CPU实验使用本地Mamba layer-first扩展00fd51eab3。原始harness和逐请求产物仍位于work_dirs/dspark-state-management，不随摘要上传。
+
+先读 [FINDINGS.md](FINDINGS.md) 和 [PROGRESS.md](PROGRESS.md)；特别注意27B端到端输出检查未通过。
 
 ## 范围
 
@@ -83,4 +85,4 @@ Qwen3.8-27B 需要独立校准：target FA KV、draft context KV、GDN persisten
 优先固定 dtype/SSM策略/verify宽度/backend，再用 `max-total-tokens`、`max-mamba-cache-size` 或已有 unified byte pool 控制不同瓶颈；启动配置值不代替实际分配量。
 不通过占用无关 GPU 张量模拟预算，不把 `mem-fraction-static` 直接当硬进程显存上限。
 
-机制 pilot 的状态和数值见本目录 `RESULTS.md`、`runs/`。四类 GPU 负载单独保存在 `gpu-workloads/`：`RESULTS.md` 为观测表，`ANALYSIS.md` 为解释和限制，`runs/` 包含每次尝试的冻结证据。两个模型的 5 个正式配置均已完成四类负载和三次重复，共 1329 个测量请求、错误为 0。续接状态见 `PROGRESS.md`；CPU offload 排查与 checkpoint 边界探针按用户要求延后。
+机制pilot见 `RESULTS.md`、`runs/`。历史四类GPU负载在 `gpu-workloads/`：两个模型5配置均完成三次重复，共1329测量请求、0错误；另有164个独立checkpoint探针请求，见 `gpu-workloads/CHECKPOINT_RESULTS.md`。CPU offload定位见 [CPU_OFFLOAD.md](CPU_OFFLOAD.md)：8B原生direct/LF通过；27B经 `00fd51eab3` 扩展Mamba LF支持后已完成联合回载，但端到端输出检查失败，GPU-only对照也复现3136 checkpoint分叉，不能宣称正确性通过。默认batch-copy故障未修复。新实验在 `hybrid-offload/`，与历史性能表分开。续接状态见 `PROGRESS.md`。

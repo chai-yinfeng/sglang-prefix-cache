@@ -1,0 +1,47 @@
+[
+  {
+    "run": "qwen38-k8-s12-direct-lf-baseline-v1",
+    "artifact_checks": {
+      "hybrid_offload_pilot.source.py": true,
+      "gpu_workloads.source.py": true,
+      "mamba.source.py": true,
+      "fixtures": true
+    },
+    "requests": 10,
+    "request_errors": 0,
+    "gpu_peak_GiB": 29.834613800048828,
+    "host_min_available_GiB": 32.31418228149414,
+    "resource_failure": null,
+    "status_file": "FAILED.json"
+  },
+  {
+    "run": "qwen38-k8-s12-direct-lf-boundary-control-v1",
+    "artifact_checks": {
+      "hybrid_offload_pilot.source.py": true,
+      "gpu_workloads.source.py": true,
+      "mamba.source.py": true,
+      "fixtures": true
+    },
+    "requests": 22,
+    "request_errors": 0,
+    "gpu_peak_GiB": 29.860004425048828,
+    "host_min_available_GiB": 32.91461944580078,
+    "resource_failure": null,
+    "status_file": "DIAGNOSTIC_COMPLETE.json"
+  },
+  {
+    "run": "qwen38-k8-s12-direct-lf-gpu-only-boundary-v1",
+    "artifact_checks": {
+      "hybrid_offload_pilot.source.py": true,
+      "gpu_workloads.source.py": true,
+      "mamba.source.py": true,
+      "fixtures": true
+    },
+    "requests": 22,
+    "request_errors": 0,
+    "gpu_peak_GiB": 29.834613800048828,
+    "host_min_available_GiB": 40.11341857910156,
+    "resource_failure": null,
+    "status_file": "DIAGNOSTIC_COMPLETE.json"
+  }
+]
