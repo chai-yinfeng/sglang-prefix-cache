@@ -1,0 +1,614 @@
+{
+  "runs": [
+    {
+      "run": "qwen3-k16-baseline-v1",
+      "profile": {
+        "model": "qwen3",
+        "capacity": 16384,
+        "max_running": 8
+      },
+      "repeats": 3,
+      "requests": 273,
+      "errors": 0,
+      "shared_cold_ttft_ms": 252.92772985994816,
+      "shared_hot_ttft_ms": 21.403444465249777,
+      "shared_after_pressure_ttft_ms": 251.2817697133869,
+      "shared_after_pressure_hit_fraction": 0.0,
+      "session_steady_hit_fraction": 0.9607843137254902,
+      "session_steady_throughput_tps": 218.38681300891338,
+      "session_steady_ttft_ms": 19.708496518433094,
+      "session_sampled_min_free_kv_tokens": 1728.0,
+      "session_sampled_max_free_kv_tokens": 2944.0,
+      "session_sampled_min_free_mamba_slots": 0.0,
+      "long6k_tpot_ms": 5.073174222928717,
+      "long6k_generate_evictions": 0.0,
+      "long6k_inactive_probe_hit_fraction": 0.9583333333333334,
+      "burst_throughput_tps": 866.2205436562324,
+      "burst_throughput_range": [
+        837.6796587075155,
+        867.7863133989345
+      ],
+      "burst_ttft_p95_ms": 3605.275273323059,
+      "burst_native_queue_p95_ms": 3370.7293067127466,
+      "burst_sampled_max_queue": 5.0,
+      "burst_sampled_max_running": 7.0,
+      "burst_sampled_min_mamba_available": 0.0,
+      "burst_request_retractions": 0,
+      "cancelled_requests": 3,
+      "observed_gpu_peak_gib": 24.258594512939453,
+      "native_memory_usage": {
+        "weight": 15.277,
+        "kvcache": 2.259,
+        "startup_available": 9.356,
+        "token_capacity": 16384,
+        "token_capacity_swa": null,
+        "graph": {
+          "prefill": 0.0,
+          "decode": 0.0,
+          "target_verify": 0.0,
+          "draft_prefill": 0.0,
+          "draft_decode": 0.0,
+          "draft_extend": 0.0
+        }
+      },
+      "resolved_max_running_requests": 8,
+      "resolved_max_mamba_cache_size": null,
+      "allocation_log": [
+        "[2026-10-27 00:20:26] Load weight end. elapsed=2.38 s, type=Qwen3ForCausalLM, avail mem=14.80 GB, mem usage=15.28 GB.",
+        "[2026-10-27 00:20:27] Load weight end. elapsed=0.93 s, type=Qwen3DSparkModel, avail mem=12.70 GB, mem usage=2.10 GB.",
+        "[2026-10-27 00:20:28] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 16384, K size: 1.13 GB, V size: 1.13 GB",
+        "[2026-10-27 00:20:28] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 16384, K size: 0.16 GB, V size: 0.16 GB",
+        "[2026-10-27 00:20:28] max_total_num_tokens=16384, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=8, context_len=8192, available_gpu_mem=9.36 GB",
+        "[2026-10-27 00:20:29] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=False"
+      ],
+      "idle": [
+        {
+          "file": "r0-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 704.0,
+            "sglang:kv_evictable_tokens": 15680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r1-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 640.0,
+            "sglang:kv_evictable_tokens": 15744.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r2-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 704.0,
+            "sglang:kv_evictable_tokens": 15680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        }
+      ],
+      "parity_observations": {
+        "cold_hot_pairs": 6,
+        "cold_hot_differences": 0,
+        "hot_after_pairs": 6,
+        "hot_after_differences": 0
+      },
+      "successful_flushes": 22,
+      "rejected_flushes": 0
+    },
+    {
+      "run": "qwen3-k8-baseline-controlled",
+      "profile": {
+        "model": "qwen3",
+        "capacity": 8192,
+        "max_running": 8
+      },
+      "repeats": 3,
+      "requests": 255,
+      "errors": 0,
+      "shared_cold_ttft_ms": 252.99332686699927,
+      "shared_hot_ttft_ms": 24.128894554451108,
+      "shared_after_pressure_ttft_ms": 252.03710817731917,
+      "shared_after_pressure_hit_fraction": 0.0,
+      "session_steady_hit_fraction": 0.0,
+      "session_steady_throughput_tps": 143.46385506271326,
+      "session_steady_ttft_ms": 173.0861938558519,
+      "session_sampled_min_free_kv_tokens": 1408.0,
+      "session_sampled_max_free_kv_tokens": 1664.0,
+      "session_sampled_min_free_mamba_slots": 0.0,
+      "long6k_tpot_ms": 5.069558393075436,
+      "long6k_generate_evictions": 6144.0,
+      "long6k_inactive_probe_hit_fraction": 0.0,
+      "burst_throughput_tps": 496.20713248399056,
+      "burst_throughput_range": [
+        490.41647863883964,
+        499.69807662447135
+      ],
+      "burst_ttft_p95_ms": 6324.117002077401,
+      "burst_native_queue_p95_ms": 5951.455683913082,
+      "burst_sampled_max_queue": 5.0,
+      "burst_sampled_max_running": 3.0,
+      "burst_sampled_min_mamba_available": 0.0,
+      "burst_request_retractions": 0,
+      "cancelled_requests": 3,
+      "observed_gpu_peak_gib": 22.924610137939453,
+      "native_memory_usage": {
+        "weight": 15.277,
+        "kvcache": 1.134,
+        "startup_available": 10.638,
+        "token_capacity": 8192,
+        "token_capacity_swa": null,
+        "graph": {
+          "prefill": 0.0,
+          "decode": 0.0,
+          "target_verify": 0.0,
+          "draft_prefill": 0.0,
+          "draft_decode": 0.0,
+          "draft_extend": 0.0
+        }
+      },
+      "resolved_max_running_requests": 8,
+      "resolved_max_mamba_cache_size": null,
+      "allocation_log": [
+        "[2026-10-27 00:23:57] Load weight end. elapsed=1.78 s, type=Qwen3ForCausalLM, avail mem=14.80 GB, mem usage=15.28 GB.",
+        "[2026-10-27 00:23:58] Load weight end. elapsed=0.41 s, type=Qwen3DSparkModel, avail mem=12.70 GB, mem usage=2.10 GB.",
+        "[2026-10-27 00:23:59] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.57 GB, V size: 0.57 GB",
+        "[2026-10-27 00:23:59] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8192, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-27 00:23:59] max_total_num_tokens=8192, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=8, context_len=8192, available_gpu_mem=10.64 GB",
+        "[2026-10-27 00:23:59] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=False hicache_attached=False"
+      ],
+      "idle": [
+        {
+          "file": "r0-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 640.0,
+            "sglang:kv_evictable_tokens": 7552.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r1-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 576.0,
+            "sglang:kv_evictable_tokens": 7616.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r2-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 7680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 0.0,
+            "sglang:mamba_evictable_tokens": 0.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        }
+      ],
+      "parity_observations": {
+        "cold_hot_pairs": 6,
+        "cold_hot_differences": 0,
+        "hot_after_pairs": 6,
+        "hot_after_differences": 0
+      },
+      "successful_flushes": 22,
+      "rejected_flushes": 0
+    },
+    {
+      "run": "qwen38-k16-s12-r2-baseline-snapshot",
+      "profile": {
+        "model": "qwen38",
+        "capacity": 16384,
+        "max_running": 2,
+        "mamba_slots": 12
+      },
+      "repeats": 3,
+      "requests": 273,
+      "errors": 0,
+      "shared_cold_ttft_ms": 606.4661224372685,
+      "shared_hot_ttft_ms": 88.44269695691764,
+      "shared_after_pressure_ttft_ms": 592.9449247196317,
+      "shared_after_pressure_hit_fraction": 0.0,
+      "session_steady_hit_fraction": 0.0,
+      "session_steady_throughput_tps": 40.39674413729436,
+      "session_steady_ttft_ms": 427.2745253983885,
+      "session_sampled_min_free_kv_tokens": 3328.0,
+      "session_sampled_max_free_kv_tokens": 3840.0,
+      "session_sampled_min_free_mamba_slots": 0.0,
+      "long6k_tpot_ms": 19.665201441298365,
+      "long6k_generate_evictions": 2048.0,
+      "long6k_inactive_probe_hit_fraction": 0.0,
+      "burst_throughput_tps": 78.39409767751258,
+      "burst_throughput_range": [
+        77.96565279004729,
+        78.58737236045941
+      ],
+      "burst_ttft_p95_ms": 40921.05254717171,
+      "burst_native_queue_p95_ms": 40511.49876229465,
+      "burst_sampled_max_queue": 7.0,
+      "burst_sampled_max_running": 2.0,
+      "burst_sampled_min_mamba_available": 0.0,
+      "burst_request_retractions": 0,
+      "cancelled_requests": 3,
+      "observed_gpu_peak_gib": 31.544082641601562,
+      "native_memory_usage": {
+        "weight": 20.139,
+        "kvcache": 0.502,
+        "startup_available": 2.115,
+        "token_capacity": 16384,
+        "token_capacity_swa": null,
+        "graph": {
+          "prefill": 0.0,
+          "decode": 0.0,
+          "target_verify": 0.0,
+          "draft_prefill": 0.0,
+          "draft_decode": 0.0,
+          "draft_extend": 0.0
+        }
+      },
+      "resolved_max_running_requests": 2,
+      "resolved_max_mamba_cache_size": 12,
+      "allocation_log": [
+        "[2026-10-27 01:35:57] Load weight end. elapsed=4.42 s, type=Qwen3_5ForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=9.94 GB, mem usage=20.14 GB.",
+        "[2026-10-27 01:35:58] Load weight end. elapsed=0.32 s, type=DSparkDraftModel, avail mem=5.98 GB, mem usage=3.96 GB.",
+        "[2026-10-27 01:35:58] Mamba Cache is allocated. max_mamba_cache_size: 12, conv_state size: 0.04GB, ssm_state size: 0.91GB intermediate_ssm_state_cache size: 1.69GB intermediate_conv_window_cache size: 0.03GB ",
+        "[2026-10-27 01:35:59] Warmed fused Mamba slot copy kernel in 238.991 ms",
+        "[2026-10-27 01:35:59] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16384, K size: 0.25 GB, V size: 0.25 GB",
+        "[2026-10-27 01:35:59] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16384, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-27 01:35:59] max_total_num_tokens=16384, chunked_prefill_size=512, max_prefill_tokens=16384, max_running_requests=2, context_len=8192, available_gpu_mem=2.11 GB",
+        "[2026-10-27 01:35:59] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=True hicache_attached=False"
+      ],
+      "idle": [
+        {
+          "file": "r0-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 15872.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r1-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 256.0,
+            "sglang:kv_evictable_tokens": 16128.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r2-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 15872.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        }
+      ],
+      "parity_observations": {
+        "cold_hot_pairs": 6,
+        "cold_hot_differences": 0,
+        "hot_after_pairs": 6,
+        "hot_after_differences": 0
+      },
+      "successful_flushes": 22,
+      "rejected_flushes": 0
+    },
+    {
+      "run": "qwen38-k16-s8-r2-baseline-snapshot",
+      "profile": {
+        "model": "qwen38",
+        "capacity": 16384,
+        "max_running": 2,
+        "mamba_slots": 8
+      },
+      "repeats": 3,
+      "requests": 273,
+      "errors": 0,
+      "shared_cold_ttft_ms": 606.0776074882597,
+      "shared_hot_ttft_ms": 602.5366368703544,
+      "shared_after_pressure_ttft_ms": 606.442567659542,
+      "shared_after_pressure_hit_fraction": 0.0,
+      "session_steady_hit_fraction": 0.0,
+      "session_steady_throughput_tps": 40.26043360609017,
+      "session_steady_ttft_ms": 431.4428851939738,
+      "session_sampled_min_free_kv_tokens": 3328.0,
+      "session_sampled_max_free_kv_tokens": 3840.0,
+      "session_sampled_min_free_mamba_slots": 0.0,
+      "long6k_tpot_ms": 19.756280607703204,
+      "long6k_generate_evictions": 1024.0,
+      "long6k_inactive_probe_hit_fraction": 0.0,
+      "burst_throughput_tps": 76.37587858753444,
+      "burst_throughput_range": [
+        75.86057375580204,
+        76.8154153839669
+      ],
+      "burst_ttft_p95_ms": 41218.87784590945,
+      "burst_native_queue_p95_ms": 40890.81003703177,
+      "burst_sampled_max_queue": 7.0,
+      "burst_sampled_max_running": 2.0,
+      "burst_sampled_min_mamba_available": 0.0,
+      "burst_request_retractions": 0,
+      "cancelled_requests": 3,
+      "observed_gpu_peak_gib": 31.08929443359375,
+      "native_memory_usage": {
+        "weight": 20.139,
+        "kvcache": 0.502,
+        "startup_available": 2.408,
+        "token_capacity": 16384,
+        "token_capacity_swa": null,
+        "graph": {
+          "prefill": 0.0,
+          "decode": 0.0,
+          "target_verify": 0.0,
+          "draft_prefill": 0.0,
+          "draft_decode": 0.0,
+          "draft_extend": 0.0
+        }
+      },
+      "resolved_max_running_requests": 2,
+      "resolved_max_mamba_cache_size": 8,
+      "allocation_log": [
+        "[2026-10-27 01:47:51] Load weight end. elapsed=4.47 s, type=Qwen3_5ForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=9.94 GB, mem usage=20.14 GB.",
+        "[2026-10-27 01:47:52] Load weight end. elapsed=0.32 s, type=DSparkDraftModel, avail mem=5.98 GB, mem usage=3.96 GB.",
+        "[2026-10-27 01:47:53] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.02GB, ssm_state size: 0.63GB intermediate_ssm_state_cache size: 1.69GB intermediate_conv_window_cache size: 0.03GB ",
+        "[2026-10-27 01:47:53] Warmed fused Mamba slot copy kernel in 236.714 ms",
+        "[2026-10-27 01:47:53] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16384, K size: 0.25 GB, V size: 0.25 GB",
+        "[2026-10-27 01:47:53] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16384, K size: 0.08 GB, V size: 0.08 GB",
+        "[2026-10-27 01:47:53] max_total_num_tokens=16384, chunked_prefill_size=512, max_prefill_tokens=16384, max_running_requests=2, context_len=8192, available_gpu_mem=2.41 GB",
+        "[2026-10-27 01:47:53] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=True hicache_attached=False"
+      ],
+      "idle": [
+        {
+          "file": "r0-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 256.0,
+            "sglang:kv_evictable_tokens": 16128.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 5.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r1-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 256.0,
+            "sglang:kv_evictable_tokens": 16128.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 5.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r2-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 256.0,
+            "sglang:kv_evictable_tokens": 16128.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 5.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        }
+      ],
+      "parity_observations": {
+        "cold_hot_pairs": 6,
+        "cold_hot_differences": 0,
+        "hot_after_pairs": 6,
+        "hot_after_differences": 0
+      },
+      "successful_flushes": 22,
+      "rejected_flushes": 0
+    },
+    {
+      "run": "qwen38-k8-s12-r2-baseline-snapshot",
+      "profile": {
+        "model": "qwen38",
+        "capacity": 8192,
+        "max_running": 2,
+        "mamba_slots": 12
+      },
+      "repeats": 3,
+      "requests": 255,
+      "errors": 0,
+      "shared_cold_ttft_ms": 608.0914638005197,
+      "shared_hot_ttft_ms": 88.52696558460593,
+      "shared_after_pressure_ttft_ms": 614.272300619632,
+      "shared_after_pressure_hit_fraction": 0.0,
+      "session_steady_hit_fraction": 0.0,
+      "session_steady_throughput_tps": 39.68763007886032,
+      "session_steady_ttft_ms": 433.77840681932867,
+      "session_sampled_min_free_kv_tokens": 192.0,
+      "session_sampled_max_free_kv_tokens": 256.0,
+      "session_sampled_min_free_mamba_slots": 0.0,
+      "long6k_tpot_ms": 19.754540347262036,
+      "long6k_generate_evictions": 5632.0,
+      "long6k_inactive_probe_hit_fraction": 0.0,
+      "burst_throughput_tps": 77.52208123506315,
+      "burst_throughput_range": [
+        75.92295642617377,
+        77.86955570180974
+      ],
+      "burst_ttft_p95_ms": 41656.30938671529,
+      "burst_native_queue_p95_ms": 40739.38396433368,
+      "burst_sampled_max_queue": 7.0,
+      "burst_sampled_max_running": 2.0,
+      "burst_sampled_min_mamba_available": 0.0,
+      "burst_request_retractions": 0,
+      "cancelled_requests": 3,
+      "observed_gpu_peak_gib": 31.373245239257812,
+      "native_memory_usage": {
+        "weight": 20.139,
+        "kvcache": 0.252,
+        "startup_available": 2.449,
+        "token_capacity": 8192,
+        "token_capacity_swa": null,
+        "graph": {
+          "prefill": 0.0,
+          "decode": 0.0,
+          "target_verify": 0.0,
+          "draft_prefill": 0.0,
+          "draft_decode": 0.0,
+          "draft_extend": 0.0
+        }
+      },
+      "resolved_max_running_requests": 2,
+      "resolved_max_mamba_cache_size": 12,
+      "allocation_log": [
+        "[2026-10-27 01:24:03] Load weight end. elapsed=4.96 s, type=Qwen3_5ForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=9.94 GB, mem usage=20.14 GB.",
+        "[2026-10-27 01:24:04] Load weight end. elapsed=0.38 s, type=DSparkDraftModel, avail mem=5.98 GB, mem usage=3.96 GB.",
+        "[2026-10-27 01:24:05] Mamba Cache is allocated. max_mamba_cache_size: 12, conv_state size: 0.04GB, ssm_state size: 0.91GB intermediate_ssm_state_cache size: 1.69GB intermediate_conv_window_cache size: 0.03GB ",
+        "[2026-10-27 01:24:05] Warmed fused Mamba slot copy kernel in 233.546 ms",
+        "[2026-10-27 01:24:05] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 8192, K size: 0.13 GB, V size: 0.13 GB",
+        "[2026-10-27 01:24:05] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 8192, K size: 0.04 GB, V size: 0.04 GB",
+        "[2026-10-27 01:24:05] max_total_num_tokens=8192, chunked_prefill_size=512, max_prefill_tokens=16384, max_running_requests=2, context_len=8192, available_gpu_mem=2.45 GB",
+        "[2026-10-27 01:24:05] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=True hicache_attached=False"
+      ],
+      "idle": [
+        {
+          "file": "r0-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 7680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r1-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 7680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        },
+        {
+          "file": "r2-idle.metrics.txt",
+          "metrics": {
+            "sglang:num_running_reqs": 0.0,
+            "sglang:num_queue_reqs": 0.0,
+            "sglang:kv_available_tokens": 512.0,
+            "sglang:kv_evictable_tokens": 7680.0,
+            "sglang:kv_used_tokens": 0.0,
+            "sglang:mamba_available_tokens": 3.0,
+            "sglang:mamba_evictable_tokens": 9.0,
+            "sglang:mamba_used_tokens": 0.0
+          }
+        }
+      ],
+      "parity_observations": {
+        "cold_hot_pairs": 6,
+        "cold_hot_differences": 0,
+        "hot_after_pairs": 6,
+        "hot_after_differences": 0
+      },
+      "successful_flushes": 22,
+      "rejected_flushes": 0
+    }
+  ],
+  "failed_attempts": [
+    {
+      "run": "qwen38-replay-smoke-calibration-replay",
+      "status": "failed",
+      "error": "RuntimeError('scheduler exception during startup')",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 322, in main\n    raise RuntimeError(\"scheduler exception during startup\")\nRuntimeError: scheduler exception during startup\n"
+    },
+    {
+      "run": "qwen38-smoke-calibration-budget-v2",
+      "status": "failed",
+      "error": "RuntimeError('server exited -15')",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 304, in main\n    while True:\n            ^^^^\nRuntimeError: server exited -15\n"
+    },
+    {
+      "run": "qwen38-smoke-calibration-extra-buffer",
+      "status": "failed",
+      "error": "RuntimeError('server exited -9')",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 304, in main\n    raise RuntimeError(f\"server exited {process.returncode}\")\nRuntimeError: server exited -9\n"
+    },
+    {
+      "run": "qwen38-smoke-calibration-limited-jit",
+      "status": "failed",
+      "error": "RuntimeError('request errors in warmup')",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 321, in main\n    time.sleep(1)\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 193, in phase\n    \"sampled_min_mamba_available\": min([s[\"metrics\"][\"sglang:mamba_available_tokens\"] for s in monitor.samples if \"sglang:mamba_available_tokens\" in s.get(\"metrics\", {})], default=None)}\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: request errors in warmup\n"
+    },
+    {
+      "run": "qwen38-smoke-calibration-v1",
+      "status": "failed",
+      "error": "RuntimeError('server exited -9')",
+      "traceback": "Traceback (most recent call last):\n  File \"/home/blackmagic/sglang/work_dirs/dspark-state-management/gpu_workloads.py\", line 304, in main\n    raise RuntimeError(f\"server exited {process.returncode}\")\nRuntimeError: server exited -9\n"
+    }
+  ],
+  "calibration_runs": [
+    {
+      "run": "qwen3-k8-baseline-v1",
+      "reason": "first repeat overlapped the tail of checkpoint download; superseded by baseline-controlled"
+    },
+    {
+      "run": "qwen38-r2-smoke-calibration-s12-r2",
+      "reason": "startup and two warmup shapes only"
+    },
+    {
+      "run": "qwen38-smoke-calibration-single",
+      "reason": "startup and two warmup shapes only"
+    }
+  ]
+}
