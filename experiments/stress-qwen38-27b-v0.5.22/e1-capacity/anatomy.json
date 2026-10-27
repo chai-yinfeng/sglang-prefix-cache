@@ -1,0 +1,249 @@
+{
+  "plain": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 0.0,
+    "draft_model_type": null,
+    "target_kv_tokens": 71824,
+    "target_kv_gb": 2.2,
+    "draft_kv_tokens": 0,
+    "draft_kv_gb": 0,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 1.87,
+    "cuda_graphs": [
+      [
+        "target prefill",
+        1.77
+      ],
+      [
+        "target decode",
+        0.1
+      ]
+    ],
+    "max_total_num_tokens": 71824,
+    "max_running_requests": 15,
+    "available_after_init_gb": 0.2,
+    "mem_fraction_static": 0.9,
+    "mamba_state_slots": 62,
+    "mamba_persistent_gb": 4.6,
+    "verify_intermediate_gb": 0.0,
+    "running_cap_by_state": 15,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 62, conv_state size: 0.17GB, ssm_state size: 4.43GB "
+    ],
+    "probe": "ok"
+  },
+  "plain-nopg": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 0.0,
+    "draft_model_type": null,
+    "target_kv_tokens": 71824,
+    "target_kv_gb": 2.2,
+    "draft_kv_tokens": 0,
+    "draft_kv_gb": 0,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 0.17,
+    "cuda_graphs": [
+      [
+        "target decode",
+        0.17
+      ]
+    ],
+    "max_total_num_tokens": 71824,
+    "max_running_requests": 15,
+    "available_after_init_gb": 1.98,
+    "mem_fraction_static": 0.9,
+    "mamba_state_slots": 62,
+    "mamba_persistent_gb": 4.6,
+    "verify_intermediate_gb": 0.0,
+    "running_cap_by_state": 15,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 62, conv_state size: 0.17GB, ssm_state size: 4.43GB "
+    ],
+    "probe": "ok"
+  },
+  "mtp": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 5.84,
+    "draft_model_type": "Qwen3_5ForCausalLMMTP",
+    "target_kv_tokens": 21130,
+    "target_kv_gb": 0.64,
+    "draft_kv_tokens": 21130,
+    "draft_kv_gb": 0.04,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 1.91,
+    "cuda_graphs": [
+      [
+        "target prefill",
+        1.77
+      ],
+      [
+        "target verify",
+        0.0
+      ],
+      [
+        "draft prefill",
+        0.09
+      ],
+      [
+        "draft decode",
+        0.05
+      ],
+      [
+        "draft extend",
+        0.0
+      ]
+    ],
+    "max_total_num_tokens": 21130,
+    "max_running_requests": 1,
+    "available_after_init_gb": 5.02,
+    "mem_fraction_static": 0.93,
+    "mamba_state_slots": 5,
+    "mamba_persistent_gb": 0.44,
+    "verify_intermediate_gb": 0.01,
+    "running_cap_by_state": 1,
+    "other_pool_lines": [
+      "GDN ReplaySSM ring buffers allocated (record_len=16, fold=False): d=0.018GB, k=0.006GB, g=0.000GB rawv=0.018GB, rawk=0.006GB, ",
+      "Mamba Cache is allocated. max_mamba_cache_size: 5, conv_state size: 0.02GB, ssm_state size: 0.42GB intermediate_ssm_state_cache size: 0.00GB intermediate_conv_w"
+    ],
+    "probe": "ok"
+  },
+  "mtp-n6-nopg": {
+    "failed": "RuntimeError('server exited -9; see /home/nuo/projects/sglang-bench-v0.5.22/work"
+  },
+  "dspark": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 3.95,
+    "draft_model_type": "DSparkDraftModel",
+    "target_kv_tokens": 15879,
+    "target_kv_gb": 0.48,
+    "draft_kv_tokens": 15879,
+    "draft_kv_gb": 0.16,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 2.15,
+    "cuda_graphs": [
+      [
+        "target prefill",
+        2.15
+      ],
+      [
+        "target verify",
+        0.0
+      ]
+    ],
+    "max_total_num_tokens": 15879,
+    "max_running_requests": 1,
+    "available_after_init_gb": 0.99,
+    "mem_fraction_static": 0.88,
+    "mamba_state_slots": 5,
+    "mamba_persistent_gb": 0.44,
+    "verify_intermediate_gb": 1.1400000000000001,
+    "running_cap_by_state": 1,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 5, conv_state size: 0.02GB, ssm_state size: 0.42GB intermediate_ssm_state_cache size: 1.12GB intermediate_conv_w"
+    ],
+    "probe": "ok"
+  },
+  "dspark-n2-nopg": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 3.95,
+    "draft_model_type": "DSparkDraftModel",
+    "target_kv_tokens": 8800,
+    "target_kv_gb": 0.26,
+    "draft_kv_tokens": 8800,
+    "draft_kv_gb": 0.08,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 0.29000000000000004,
+    "cuda_graphs": [
+      [
+        "target verify",
+        0.12
+      ],
+      [
+        "draft verify",
+        0.17
+      ]
+    ],
+    "max_total_num_tokens": 8800,
+    "max_running_requests": 2,
+    "available_after_init_gb": 2.31,
+    "mem_fraction_static": 0.92,
+    "mamba_state_slots": 8,
+    "mamba_persistent_gb": 0.65,
+    "verify_intermediate_gb": 1.72,
+    "running_cap_by_state": 2,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.02GB, ssm_state size: 0.63GB intermediate_ssm_state_cache size: 1.69GB intermediate_conv_w"
+    ],
+    "probe": "ok"
+  },
+  "dflash2": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 4.02,
+    "draft_model_type": "DFlash2DraftModel",
+    "target_kv_tokens": 14013,
+    "target_kv_gb": 0.42,
+    "draft_kv_tokens": 14013,
+    "draft_kv_gb": 0.14,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 1.04,
+    "cuda_graphs": [
+      [
+        "target prefill",
+        0.94
+      ],
+      [
+        "target verify",
+        0.03
+      ],
+      [
+        "draft verify",
+        0.07
+      ]
+    ],
+    "max_total_num_tokens": 14013,
+    "max_running_requests": 2,
+    "available_after_init_gb": 1.09,
+    "mem_fraction_static": 0.91,
+    "mamba_state_slots": 8,
+    "mamba_persistent_gb": 0.65,
+    "verify_intermediate_gb": 1.72,
+    "running_cap_by_state": 2,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.02GB, ssm_state size: 0.63GB intermediate_ssm_state_cache size: 1.69GB intermediate_conv_w"
+    ],
+    "probe": "ok"
+  },
+  "dflash2-n3-nopg": {
+    "target_weights_gb": 20.14,
+    "draft_weights_gb": 4.02,
+    "draft_model_type": "DFlash2DraftModel",
+    "target_kv_tokens": 7150,
+    "target_kv_gb": 0.22,
+    "draft_kv_tokens": 7150,
+    "draft_kv_gb": 0.06,
+    "kv_dtype": "torch.float8_e4m3fn",
+    "cuda_graph_gb": 0.30000000000000004,
+    "cuda_graphs": [
+      [
+        "target verify",
+        0.16
+      ],
+      [
+        "draft verify",
+        0.14
+      ]
+    ],
+    "max_total_num_tokens": 7150,
+    "max_running_requests": 3,
+    "available_after_init_gb": 1.08,
+    "mem_fraction_static": 0.93,
+    "mamba_state_slots": 12,
+    "mamba_persistent_gb": 0.9500000000000001,
+    "verify_intermediate_gb": 2.29,
+    "running_cap_by_state": 3,
+    "other_pool_lines": [
+      "Mamba Cache is allocated. max_mamba_cache_size: 12, conv_state size: 0.04GB, ssm_state size: 0.91GB intermediate_ssm_state_cache size: 2.25GB intermediate_conv_"
+    ],
+    "probe": "ok"
+  }
+}
