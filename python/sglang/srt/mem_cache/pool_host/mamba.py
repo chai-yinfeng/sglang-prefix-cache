@@ -100,6 +100,7 @@ class MambaPoolHost(HostKVCache):
         self.page_size = 1
 
         assert layout in [
+            "layer_first",
             "page_first",
             "page_first_direct",
         ], f"Unsupported layout: {layout}"
@@ -435,7 +436,7 @@ class MambaPoolHost(HostKVCache):
         dst_indices: torch.Tensor,
         io_backend: str,
     ) -> None:
-        if src_indices.numel() == 0:
+        if src_indices.numel() == 0 or src.numel() == 0:
             return
         # Unified conv/SSM views span a whole state envelope per slot. Stage
         # contiguously for transfer kernels; torch indexing respects the strides

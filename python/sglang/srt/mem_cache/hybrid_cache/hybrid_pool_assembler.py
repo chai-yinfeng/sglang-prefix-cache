@@ -1259,10 +1259,9 @@ def build_hybrid_mamba_stack(
         host_size=kv_host_size,
         mtp_draft_device_pools=root.packed_draft_device_pools,
     )
-    # MambaPoolHost only supports page_first_direct; the global layout may be
-    # page_first_kv_split (e.g. MLA + KDA hybrid on NPU). The Mamba/KDA state
-    # pool has no separate K/V buffers, so kv_split does not apply; override
-    # to page_first_direct.
+    # Mamba/KDA state has no separate K/V buffers, so the global
+    # page_first_kv_split layout (e.g. MLA + KDA hybrid on NPU) does not apply.
+    # Use page_first_direct for the state pool in that case.
     mamba_layout = (
         "page_first_direct"
         if get_memory().hicache_mem_layout == "page_first_kv_split"

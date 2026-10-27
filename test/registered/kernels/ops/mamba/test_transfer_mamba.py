@@ -1,8 +1,8 @@
 """Unit tests for the Mamba JIT transfer kernel.
 
 Verifies kernel backup (D2H) and load (H2D) correctness for
-``MambaPoolHost`` via the ``io_backend='kernel'`` path, across both
-supported layouts and multiple index scenarios.
+``MambaPoolHost`` across supported layouts, I/O backends, and multiple
+index scenarios.
 """
 
 import sys
@@ -354,6 +354,8 @@ def test_mamba_kernel_full_indices(dtype, layout):
 @pytest.mark.parametrize(
     "layout,io_backend",
     [
+        ("layer_first", "direct"),
+        ("layer_first", "kernel"),
         ("page_first", "kernel"),
         ("page_first_direct", "kernel"),
         ("page_first_direct", "direct"),
