@@ -55,6 +55,8 @@ DFlash 每步 draft 一个固定 16 个位置的块，target 全部 verify。`--
 
 ### 正确性
 
+> 第五轮补充（`../policy-round5-v0.5.22/FINDINGS.md` m4）：放大到 48 个 prompt × 128 token 后，参照（宽度 16）本身也有个别 0.75 nats 的差距，eager 窄宽度最大 1.0，分布和参照一样；下文 6 个 prompt 得出的"≤ 0.25"是样本太小。
+
 同一个 b16 服务，6 个 prompt 贪心生成 160 个 token，分别在宽度 16（参考）、4、2、1、生成途中切换宽度（16 → 1 → 3 → 16），以及再跑一次 16。然后用一个 plain 服务对每个输出做 teacher-forced 打分，看每个 token 是不是 target 的 top-1（`w3-teacher-forced.csv`）：
 
 - 所有变体中，不是 top-1 的 token 与 top-1 的差距都 ≤ 0.25 nat，和宽度 16 的参考、以及同宽度重跑的量级一样，属于 bf16 的近似平局。

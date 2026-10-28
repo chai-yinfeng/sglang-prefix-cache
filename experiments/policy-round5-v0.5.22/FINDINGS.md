@@ -8,7 +8,7 @@
 | m1 | (S+D)/S 状态池比例从手动参数变成 policy 的代码 | 完成，见下 |
 | m2 | 同一批里混对话和校对请求：整批统一宽度损失多少 | 完成；暴露出 policy 反应慢，已修（`1b491876b9`），修复后重跑进行中 |
 | m3 | 开环（泊松到达）负载下的延迟：TTFT、TPOT、E2E p50 / p95 | 第四轮策略已测完；暴露出中等负载下 eager 的代价，修复后重跑进行中 |
-| m4 | 窄宽度的 target verify CUDA graph | 代码已提交，测试进行中 |
+| m4 | 窄宽度的 target verify CUDA graph | 完成：正确性通过；中等负载补回 eager 的损失，代价是 KV 池少 14%；连带修了 policy 的两个问题 |
 
 - 环境同第四轮：Qwen3-8B BF16 + `z-lab/Qwen3-8B-DFlash-b16`，RTX 5090，flashinfer，CUDA graph 和 overlap 开启，capture 后定池大小；hybrid 是 Qwen3.5-4B + `z-lab/Qwen3.5-4B-DFlash`。除注明外单次运行。
 - 原始数据：`work_dirs/stress-qwen3-8b/runs/r5-*`；脚本 `phase_bench.py`（新增 `mix` 阶段）、`openloop_bench.py`、`summarize_r5.py`。
@@ -93,3 +93,68 @@ DFlash 现在整批只能用一个宽度。用 c64 段的静态数据做一个�
 - 静态 b16 在 7/s 时处理不过来，请求排队，TTFT 到 10 秒以上；以"TTFT ≤ 2 s 且 TPOT ≤ 30 ms"算，对话只有 14% 的请求达标（其他配置 ≥ 98%）。
 - policy 在 1/s 时和 b16 一样好（TPOT 比 b4 低 8–16%，混合负载的 E2E p50 是 b4 的一半左右），7/s 时不会积压。
 - 但 7/s 时 policy 比 b4 差：对话 TPOT 高约 20%，混合负载的 TPOT p95 是 b4 的 2 倍，整体 E2E p95 比 b4 高 29–44%。从日志看，这时同时在跑约 25–31 个请求，policy 选的宽度（3、4）本身是对的，但这两个宽度没有 CUDA graph，全部 eager（graph 占比 0）；再加上开环下批大小一直在变，policy 不停重新试探。这正是 m4（窄宽度 graph）要补的地方，修复后的结果见 m4。
+
+## m4：窄宽度的 target verify CUDA graph
+
+### 实现
+
+第四轮的运行时宽度只有块宽度（16）有 CUDA graph，窄宽度全部 eager，c16 时慢 9–15%。新参数 `--speculative-dflash-verify-graph-widths 8 6 4`（`c7ee2b44d8`、`c1879e9103`，默认关闭）：
+
+- 每个列出的宽度各 capture 一套 target verify graph，每套用自己的 attention backend。flashinfer 的 graph metadata 按 batch size 存，两个宽度共用一个 backend 会互相覆盖 wrapper，结果是静默算错而不是崩溃；
+- `VerifyWidthGraphRunner` 按批次的 verify 宽度把每次 target forward 分派给对应的 runner；没有 graph 的宽度交给块宽度的 runner，它会拒绝，于是照旧 eager；
+- 不改冻结的 `model_runner.py`，只在 DFlash worker 初始化 graph 之后替换 target 的 decode runner；
+- 窄宽度只 capture batch size ≤ 32：所有 batch size 都 capture 时每个宽度约 0.45 GB，KV 池少 20%，而 c64 时 eager 本来就不比 graph 慢。draft 端仍然 eager（5 层对 36 层，约占 eager 差距的 1 个点）。
+
+### 正确性
+
+48 个 ShareGPT prompt × 128 token，16 并发，贪心生成后在 plain 服务上逐 token 打分（直接用 token id，避免重新分词），`m4-teacher-forced.csv`：
+
+| 变体 | token | 不是 plain 第一名 | 差距 > 0.25 | 差距 > 0.5 | 最大差距（nats） |
+|---|---|---|---|---|---|
+| 无窄 graph，宽度 16 | 6144 | 32 | 4 | 1 | 0.75 |
+| 无窄 graph，宽度 4（eager） | 6144 | 32 | 1 | 1 | 1.0 |
+| 窄 graph，宽度 16 | 6144 | 32 | 5 | 1 | 0.75 |
+| 窄 graph，宽度 8 | 6144 | 34 | 3 | 2 | 1.0 |
+| 窄 graph，宽度 6 | 6144 | 34 | 4 | 0 | 0.5 |
+| 窄 graph，宽度 4 | 6144 | 33 | 2 | 0 | 0.5 |
+
+- 所有变体的分布一样（约 0.5% 的 token 不是 plain 的第一名，都在前 5 名里），包括完全没有新代码的宽度 16。所以窄宽度 graph 没有引入额外误差，差异是 DFlash verify 和 plain prefill 的数值路径不同。
+- 运行中来回切换宽度（8 → 4 → 6 → 16）的小规模检查（6 个 prompt）也通过。
+- 修正第四轮的说法：第四轮用 6 个 prompt 得出"所有差距 ≤ 0.25 nats"，样本太小；放大到 48 个 prompt，参照（宽度 16）本身就有 0.75 的差距。
+
+### 吞吐
+
+同一个 b16 服务在运行时切宽度，w1-natural（`m4-width-throughput.csv`；eager 和静态 bk 来自第四轮）：
+
+| 并发 | 宽度 | 运行时 eager（第四轮） | **运行时 + 窄 graph（≤ 32）** | 静态 bk（graph） |
+|---|---|---|---|---|
+| 16 | 8 | - | **1150** | 1131 |
+| 16 | 6 | - | **1133** | - |
+| 16 | 4 | 1039 | **1146** | 1179 |
+| 64 | 4 | 2088 | **2090** | 2043 |
+
+- c16 补回了 eager 的大部分损失（宽度 4：+10%，离静态 b4 差 3%）；c64 不受影响（batch > 32 仍然 eager，本来就不慢）。
+- 代价：三个宽度共约 0.95 GB graph 显存，capture 后定池时 KV 池从 43.8K 降到 37.7K token（−14%）。所有 batch size 都 capture 时降到 34.9K（−20%），c64 宽度 4 掉到 1958。
+
+### 跑整套测试时又发现并修了 policy 的两个问题
+
+1. **跳转门槛和窗口长度**（`1b491876b9`，见 m2）：同批混合时 policy 在宽度 16 停 21 秒。
+2. **上界只在开始新一轮时检查**（`1e907e07a0`）：开环混合负载第二个高速段，批大小从 28 慢慢涨到 62，policy 一直停在宽度 8（每步 verify 496 个 token、一半浪费），直到请求开始排队，E2E p95 从 9 秒涨到 19 秒。原因是新一轮试探要等决策后累计 256 个计数步，而开环下 prefill 穿插，大部分 decode 步不计入窗口；"第一步就跳"要求超出上界两倍（8 × 62 = 496 < 512）。改成：每个窗口结束时，只要窗口浪费一半以上且超过上界，就立刻跳到上界下（和第四轮对下界的处理对称），除非正在往宽的方向试探。用服务端记录的 policy 轨迹离线重放：闭环的对话、混合、校对三组时变测试决策完全不变；开环两组和同批混合会更早变窄。
+
+### 整套测试（修复 2 之前的 policy）
+
+闭环（总耗时，s；`m4-phase-benches.csv`）：
+
+| 测试 | 第四轮 policy | 修复 1 | 修复 1 + 窄 graph | 最好的静态宽度 |
+|---|---|---|---|---|
+| 对话（c4 / c64 交替） | 162.8 | 162.1 | 162.1 | b3 171.4 |
+| 混合时变 | 131.9 | 132.3 | **131.1** | b4 149.7 |
+| 校对 | 85.3 | **84.1** | 84.4 | b16 84.8 |
+| 同批混合（m2） | 113.3 | 104.4 | **102.1** | b4 106.2（逐阶段最优 100.5） |
+
+开环（E2E p50 / p95，s；TPOT p50 / p95，ms；`m4-openloop.csv`）：
+
+| 负载 | 第四轮 policy | 修复 1 | 修复 1 + 窄 graph | b4 | plain |
+|---|---|---|---|---|---|
+| 对话 | 3.18 / 8.88；13.1 / 19.4 | 3.26 / 9.44；13.2 / 21.5 | 2.99 / 8.77；12.2 / 20.9 | **2.60 / 6.91**；10.7 / 13.5 | 3.44 / 9.42；14.2 / 16.3 |
+| 混合 | 1.96 / 9.09；7.2 / 24.4 | 3.15 / 18.66；12.2 / 48.8 | **1.84** / 7.59；7.1 / 19.0 | 1.92 / **6.30**；6.9 / 13.0 | 4.34 / 9.12；15.5 / 17.7 |

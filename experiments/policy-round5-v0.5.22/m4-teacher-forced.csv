@@ -1,0 +1,8 @@
+variant,tokens,non_top1,gap_gt_0.25,gap_gt_0.5,outside_top5,max_gap
+dflash-pcs-observe/w16,6144,32,4,1,0,0.75
+dflash-pcs-observe/w4,6144,32,1,1,0,1.0
+dflash-pcs-observe/w6,6144,25,1,0,0,0.5
+dflash-pcs-observe-g/w16,6144,32,5,1,0,0.75
+dflash-pcs-observe-g/w8,6144,34,3,2,0,1.0
+dflash-pcs-observe-g/w6,6144,34,4,0,0,0.5
+dflash-pcs-observe-g/w4,6144,33,2,0,0,0.5
