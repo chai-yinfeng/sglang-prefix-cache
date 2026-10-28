@@ -81,3 +81,31 @@
 做之前先测上界。释放权重后，暂停的 DSpark 最多有 61K + 13.7K ≈ 75K 个 KV token。用 plain target 把 KV 限制在 75K（`--max-total-tokens 75000`），在最吃显存的 W2 并发 64 上跑：**1386 tok/s，低于规划器的 1399**。暂停的 DSpark 每步还比 plain 多约 7%，所以即使 s4 完全实现，暂停 + 回收也赢不了规划器。在 w1 上显存不是瓶颈（各方案同时运行的请求数都在 82–88），回收显存帮不上忙。
 
 结论：在 Qwen3-8B + DSpark + RTX 5090 上，① d 的"关推测"只在 draft 几乎失效时才有收益，s3 的 regime 策略已经覆盖这种情况；显存回收这一半没有正收益，所以不实现。已写的 KV 收缩原语（VMM 区间 unmap、按增长边界 decommit、占位页映射）没有提交，保存在 `MyDocs/Plan/s4-kv-shrink-primitives.patch`。对 DFlash 这类高并发下接受长度只有 1.4 左右的 drafter，这个判断可能不同，但 DFlash 先要有 ragged verify 才能支持暂停。
+
+## s5：整套系统对比
+
+三个配置都是 Qwen3-8B、FA4、page 64、capture 后定池大小、HiCache：
+- **conditional**：DSpark compact 规划器 + `--speculative-policy conditional`（regime + priority + memory）+ 2 倍虚拟地址预留；
+- **规划器**：同样的 DSpark 栈，policy 只观察；
+- **plain**：plain target。
+
+同一天连续运行（`s5-final-system.csv`）：
+
+| 负载 | 并发 | conditional | 规划器 | plain | conditional / plain |
+|---|---|---|---|---|---|
+| W2 | 16 | 821 | 819 | 647 | 1.27 倍 |
+| W2 | 64 | 1394 | 1396 | 1510 | 0.92 倍 |
+| w1-natural | 16 | 1409 | 1412 | 837 | 1.68 倍 |
+| w1-natural | 64 | 2457 | 2473 | 2038 | 1.21 倍 |
+
+单位 tok/s。**conditional 与规划器在四个点上的差别都在 1% 以内**，policy 层自己的三个执行器在这里都没有动作：
+- **memory**：默认 fraction 下，服务时空闲显存最低只有 0.65 GB，低于 1 GiB 的安全余量，所以没有扩池；第二轮 R3 的 +18% 来自 0.85 fraction 留下的余量；
+- **regime**：接受长度 2.4–3.0，高于 1.8 的门槛，所以没有探测暂停；
+- **priority**：bench 的请求都没有设置优先级，所有请求权重相同，排序不变。
+
+这符合设计：这些执行器是按条件起作用的。数字背后的增益来自 DSpark 的 compact 规划器、capture 后定池大小和 HiCache。policy 层只在对应条件出现时才额外起作用：
+- 显存有余量时扩池（R3，+18%）；
+- draft 失效时暂停（s3，+35%）；
+- 有 SLO 等级时偏向高优先级请求（P4，高优先级 TPOT −8% 到 −18%）。
+
+W2 并发 64 仍然是 plain 的 0.92 倍，这是本机配置下剩下的差距。s4 的上界实验说明，单靠回收 draft 权重补不上这个差距。

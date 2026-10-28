@@ -1,0 +1,13 @@
+algo,workload,concurrency,output_tok_s,median_ttft_ms,median_tpot_ms,accept_length,max_concurrent_requests
+dspark-conditional,w1-natural,16,1409,57,9.2,2.8,28
+dspark-conditional,w1-natural,64,2457,270,18.5,2.4,89
+dspark-conditional,w2-shared-prefix,16,821,49,13.0,2.97,29
+dspark-conditional,w2-shared-prefix,64,1394,3104,17.4,2.8,88
+dspark-planner-final,w1-natural,16,1412,58,9.2,2.8,28
+dspark-planner-final,w1-natural,64,2473,271,18.2,2.39,90
+dspark-planner-final,w2-shared-prefix,16,819,48,13.0,2.97,29
+dspark-planner-final,w2-shared-prefix,64,1396,3111,17.4,2.8,87
+plain-pcs-hicache,w1-natural,16,837,55,13.3,1.0,23
+plain-pcs-hicache,w1-natural,64,2038,58,22.1,1.0,83
+plain-pcs-hicache,w2-shared-prefix,16,647,706,16.8,1.0,32
+plain-pcs-hicache,w2-shared-prefix,64,1510,875,24.6,1.0,127
