@@ -1,0 +1,5 @@
+output_kind,prompts,generated_tokens,non_top1_tokens,max_gap_nats
+ref,6,960,8,0.250
+paused,6,960,7,0.125
+toggled,6,960,10,0.250
+rerun,6,960,8,0.250

@@ -27,6 +27,8 @@ from sglang.srt.model_executor.forward_batch_info import ForwardMode
 _EMA_ALPHA = 0.1
 # Arbitrary; cudaMemGetInfo is cheap but not free, and free memory moves slowly.
 _FREE_MEMORY_SAMPLE_STEPS = 32
+# Policies whose plans may pause drafting.
+_PAUSING_POLICIES = ("regime", "conditional")
 
 
 class _TraceRecord(msgspec.Struct, frozen=True):
@@ -56,6 +58,11 @@ class SpecPolicyController:
         ledger: Optional[MemoryLedger] = None,
         grow_kv_pool: Optional[Callable[[int], int]] = None,
     ) -> None:
+        if policy_name in _PAUSING_POLICIES and not _supports_spec_pause(draft_worker):
+            raise ValueError(
+                f"--speculative-policy {policy_name} pauses drafting, which needs DSpark "
+                "with compact ragged verify and a verify budget planner."
+            )
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
         self.policy = build_spec_policy(
             name=policy_name, sps_table_path=sps_table_path, ledger=ledger
@@ -117,6 +124,14 @@ class SpecPolicyController:
             return
         self._trace.write(self._encoder.encode(record) + b"\n")
         self._trace.flush()
+
+
+def _supports_spec_pause(draft_worker) -> bool:
+    from sglang.srt.speculative.dspark_components.dspark_worker_v2 import (
+        DSparkWorkerV2,
+    )
+
+    return isinstance(draft_worker, DSparkWorkerV2) and draft_worker.supports_spec_pause
 
 
 def _free_gpu_bytes() -> Optional[int]:

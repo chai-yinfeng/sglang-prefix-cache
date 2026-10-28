@@ -30,6 +30,7 @@ from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noq
     LoadAwareVerifyPolicy,
     MemoryHeadroomPolicy,
     PriorityWeightPolicy,
+    SpecRegimePolicy,
     knee_tokens_from_sps,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (  # noqa: E402
@@ -83,14 +84,18 @@ class TestSpecPolicySensor(CustomTestCase):
         self.assertIsNone(first.step_ms_ema)
         second = _observe(sensor, mode=ForwardMode.DECODE, now=1.02)
         self.assertAlmostEqual(second.step_ms_ema, 20.0)
+        self.assertAlmostEqual(second.step_ms, 20.0)
         _observe(sensor, mode=ForwardMode.EXTEND, now=1.5)
         after_prefill = _observe(sensor, mode=ForwardMode.DECODE, now=1.6)
         self.assertAlmostEqual(after_prefill.step_ms_ema, 20.0)
+        # The goodput windows read the raw step, which a prefill also invalidates.
+        self.assertIsNone(after_prefill.step_ms)
 
     def test_accept_length_includes_bonus_token(self):
         sensor = SpecPolicySensor(ema_alpha=0.5)
         obs = _observe(sensor, mode=ForwardMode.DECODE, now=1.0, correct=6, verify=8)
         self.assertAlmostEqual(obs.accept_length_ema, 2.5)
+        self.assertEqual(obs.num_accept_tokens, 4 + 6)
         self.assertEqual(obs.num_verify_tokens_per_req, 8)
         obs = _observe(sensor, mode=ForwardMode.DECODE, now=1.1, correct=2, verify=8)
         self.assertAlmostEqual(obs.accept_length_ema, 2.0)
@@ -226,6 +231,113 @@ class TestLoadAwareVerifyPolicy(CustomTestCase):
         self.assertEqual(plan, LoadAwareVerifyPolicy.FULL)
 
 
+def _regime_steps(
+    policy, plan, *, steps, batch_size, on_ms, paused_ms, accept_length=1.5
+):
+    """Drive the policy against an engine whose step time follows the plan's mode;
+    a paused step commits one token per request."""
+    for _ in range(steps):
+        paused = bool(plan.spec_paused)
+        observation = Observation(
+            step=0,
+            forward_mode="DECODE",
+            batch_size=batch_size,
+            num_running=batch_size,
+            num_queued=0,
+            kv=PoolUsage(used=0, evictable=0, available=0),
+            step_ms=paused_ms if paused else on_ms,
+            num_accept_tokens=batch_size if paused else int(batch_size * accept_length),
+        )
+        plan = policy.decide(observation=observation, current=plan)
+    return plan
+
+
+class TestSpecRegimePolicy(CustomTestCase):
+    def test_pause_sticks_only_when_its_probe_beats_the_margin(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        enough = 4 * (mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS)
+        # Spec: 96 tokens / 20 ms. Paused at 12 ms: 64 / 12 = 5.3 > 4.8 * 1.03 tok/ms.
+        plan = _regime_steps(
+            SpecRegimePolicy(),
+            SpecPolicyPlan(),
+            steps=enough,
+            batch_size=64,
+            on_ms=20.0,
+            paused_ms=12.0,
+        )
+        self.assertTrue(plan.spec_paused)
+        # Paused at 13 ms: 4.9 tok/ms is within the 3% margin, so speculation stays.
+        plan = _regime_steps(
+            SpecRegimePolicy(),
+            SpecPolicyPlan(),
+            steps=enough,
+            batch_size=64,
+            on_ms=20.0,
+            paused_ms=13.0,
+        )
+        self.assertFalse(plan.spec_paused)
+
+    def test_high_acceptance_never_probes_a_pause(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        # Pausing would be faster here, but at 2.5 tokens per step it is not tried.
+        plan = _regime_steps(
+            SpecRegimePolicy(),
+            SpecPolicyPlan(),
+            steps=4 * mod._REGIME_MAX_EXPLOIT_STEPS,
+            batch_size=64,
+            on_ms=20.0,
+            paused_ms=1.0,
+            accept_length=2.5,
+        )
+        self.assertFalse(plan.spec_paused)
+
+    def test_losing_probes_back_off(self):
+        # Pausing always loses here; without the doubling interval, 8192 steps would
+        # hold about eight probes.
+        policy, plan, probes = SpecRegimePolicy(), SpecPolicyPlan(), 0
+        for _ in range(8192 // 64):
+            before = bool(plan.spec_paused)
+            plan = _regime_steps(
+                policy, plan, steps=64, batch_size=64, on_ms=20.0, paused_ms=16.0
+            )
+            probes += int(plan.spec_paused and not before)
+        self.assertLessEqual(probes, 4)
+        self.assertFalse(plan.spec_paused)
+
+    def test_small_batches_never_pause_and_end_a_pause(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        small = mod._REGIME_MIN_PAUSE_BATCH - 1
+        steps = mod._REGIME_EXPLOIT_STEPS + 4 * mod._REGIME_WINDOW_STEPS
+        policy = SpecRegimePolicy()
+        plan = _regime_steps(
+            policy,
+            SpecPolicyPlan(),
+            steps=steps,
+            batch_size=small,
+            on_ms=20.0,
+            paused_ms=1.0,
+        )
+        self.assertFalse(plan.spec_paused)
+        plan = _regime_steps(
+            policy, plan, steps=steps, batch_size=64, on_ms=20.0, paused_ms=1.0
+        )
+        self.assertTrue(plan.spec_paused)
+        # Resumed without a probe once a window's mean batch is small: at most two
+        # windows, since the one in flight when the load drops still averages high.
+        plan = _regime_steps(
+            policy,
+            plan,
+            steps=2 * mod._REGIME_WINDOW_STEPS,
+            batch_size=small,
+            on_ms=20.0,
+            paused_ms=1.0,
+        )
+        self.assertFalse(plan.spec_paused)
+
+
 class TestMemoryLedger(CustomTestCase):
     def test_shared_draft_storage_is_counted_once(self):
         target = torch.nn.Linear(4, 4, bias=False)
@@ -350,6 +462,18 @@ class TestSpecPolicyController(CustomTestCase):
         self.assertEqual(records[0]["observation"]["forward_mode"], "DECODE")
         self.assertEqual(records[0]["plan"], {})
         worker.set_dspark_forced_budget_frac.assert_not_called()
+
+    def test_pausing_policy_rejects_a_worker_that_cannot_pause(self):
+        # Caught at startup instead of as an AttributeError on the first pause.
+        for name in ("regime", "conditional"):
+            with self.assertRaises(ValueError):
+                SpecPolicyController(
+                    policy_name=name,
+                    sps_table_path=None,
+                    draft_worker=Mock(),
+                    trace_path=None,
+                    is_trace_writer=False,
+                )
 
     def test_non_writer_rank_skips_trace(self):
         with tempfile.TemporaryDirectory() as tmp:

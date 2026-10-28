@@ -23,6 +23,8 @@ class SpecPolicyActuator:
     def apply(
         self, *, plan: SpecPolicyPlan, current: SpecPolicyPlan, reqs: Sequence
     ) -> None:
+        if plan.spec_paused != current.spec_paused:
+            self._draft_worker.set_dspark_spec_paused(bool(plan.spec_paused))
         if plan.dspark_verify_budget_frac != current.dspark_verify_budget_frac:
             self._draft_worker.set_dspark_forced_budget_frac(
                 plan.dspark_verify_budget_frac

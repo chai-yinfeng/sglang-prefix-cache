@@ -49,6 +49,7 @@ from sglang.srt.speculative.dspark_components.dspark_config import (
 )
 from sglang.srt.speculative.dspark_components.dspark_draft import (
     DraftBlockProposer,
+    bonus_only_proposal,
     make_next_draft_input,
 )
 from sglang.srt.speculative.dspark_components.dspark_draft_sampler import (
@@ -416,6 +417,8 @@ class DSparkWorkerV2(BaseSpecWorker):
         )
 
         self._forced_budget_frac: Optional[float] = None
+        # Paused: decode skips the draft and verifies only each request's root.
+        self._spec_paused = False
         self._need_mamba_verify_commit = False
 
         self._observers = DsparkStepObservers(
@@ -554,6 +557,24 @@ class DSparkWorkerV2(BaseSpecWorker):
             return
         self._forced_budget_frac = frac
         self._verify_planner.set_forced_budget_frac(frac)
+
+    @property
+    def supports_spec_pause(self) -> bool:
+        # A root-only step is a one-token ragged layout, which only compact verify runs.
+        return (
+            self._verify_planner.is_compact_mode
+            and self._verify_planner.schedules_verify_budget
+        )
+
+    def set_dspark_spec_paused(self, paused: bool) -> None:
+        if not self._hosts_draft or paused == self._spec_paused:
+            return
+        if paused and not self.supports_spec_pause:
+            raise ValueError(
+                "Pausing DSpark needs compact ragged verify with a verify budget planner."
+            )
+        self._spec_paused = paused
+        logger.info("DSpark speculation %s", "paused" if paused else "resumed")
 
     def set_dspark_request_weights(
         self, *, req_pool_indices: list[int], weights: list[float]
@@ -886,16 +907,26 @@ class DSparkWorkerV2(BaseSpecWorker):
         ):
             simulate_bonus_sampling_info = sampling_info
             sampling_info = None
-        with self._draft_context(), self._observers.segment(InfoSegment.DRAFT):
-            proposal = self._proposer.propose(
-                batch=batch,
+        spec_paused = self._spec_paused
+        if spec_paused:
+            proposal = bonus_only_proposal(
                 draft_input=draft_input,
-                verify_window=verify_window,
                 bs=bs,
-                device=device,
-                target_model=target_model,
+                gamma=self._proposer.gamma,
                 sampling_info=sampling_info,
+                device=device,
             )
+        else:
+            with self._draft_context(), self._observers.segment(InfoSegment.DRAFT):
+                proposal = self._proposer.propose(
+                    batch=batch,
+                    draft_input=draft_input,
+                    verify_window=verify_window,
+                    bs=bs,
+                    device=device,
+                    target_model=target_model,
+                    sampling_info=sampling_info,
+                )
         draft_block_ids = proposal.draft_block_ids
         draft_block = proposal.draft_block
         draft_tokens = draft_block.draft_tokens
@@ -904,22 +935,30 @@ class DSparkWorkerV2(BaseSpecWorker):
 
         confidence = proposal.confidence
 
-        verify_token_budget = self._verify_planner.resolve_verify_token_budget(
-            draft_input=draft_input,
-            confidence=confidence,
-            prefix_lens=prefix_lens,
-            req_pool_indices=batch.req_pool_indices,
-        )
-
-        layout = self._verify_planner.schedule_layout(
-            req_pool_indices=batch.req_pool_indices,
-            prefix_lens=prefix_lens,
-            device=device,
-            confidence=confidence,
-            budget=verify_token_budget,
-            global_num_reqs=global_num_reqs,
-            dp_tier_num_tokens=self._dp_verify_tier_num_tokens(batch),
-        )
+        if spec_paused:
+            verify_token_budget = 0
+            layout = self._verify_planner.bonus_only_layout(
+                req_pool_indices=batch.req_pool_indices,
+                device=device,
+                global_num_reqs=global_num_reqs,
+                dp_tier_num_tokens=self._dp_verify_tier_num_tokens(batch),
+            )
+        else:
+            verify_token_budget = self._verify_planner.resolve_verify_token_budget(
+                draft_input=draft_input,
+                confidence=confidence,
+                prefix_lens=prefix_lens,
+                req_pool_indices=batch.req_pool_indices,
+            )
+            layout = self._verify_planner.schedule_layout(
+                req_pool_indices=batch.req_pool_indices,
+                prefix_lens=prefix_lens,
+                device=device,
+                confidence=confidence,
+                budget=verify_token_budget,
+                global_num_reqs=global_num_reqs,
+                dp_tier_num_tokens=self._dp_verify_tier_num_tokens(batch),
+            )
         run_compact = self._verify_planner.should_run_compact(layout=layout)
 
         verify_ids_2d = torch.cat(
@@ -1063,29 +1102,30 @@ class DSparkWorkerV2(BaseSpecWorker):
             )
         logits_output.hidden_states = None
 
-        self._observers.observe_verify_step(
-            forward_ct=int(batch.forward_iter),
-            reqs=batch.reqs,
-            bs=bs,
-            proposal_folded=proposal.folded,
-            verify_ids_2d=verify_ids_2d,
-            target_logits=logits_output.next_token_logits,
-            layout=layout,
-            confidence=confidence,
-            confidence_raw=proposal.confidence_raw,
-            prefix_lens=prefix_lens,
-            draft_tokens=draft_tokens,
-            draft_block=draft_block,
-            sampling_info=sampling_info,
-            correct_len=accept.correct_len,
-            cap_trim_lens=accept.cap_trim_lens,
-            bonus=accept.bonus,
-            commit_lens=accept.commit_lens,
-            verify_token_budget=verify_token_budget,
-            req_pool_indices=batch.req_pool_indices,
-            verify_tier_num_tokens=int(batch.spec_verify_tier_num_tokens),
-            dp_tier_num_tokens=self._dp_verify_tier_num_tokens(batch),
-        )
+        if not spec_paused:
+            self._observers.observe_verify_step(
+                forward_ct=int(batch.forward_iter),
+                reqs=batch.reqs,
+                bs=bs,
+                proposal_folded=proposal.folded,
+                verify_ids_2d=verify_ids_2d,
+                target_logits=logits_output.next_token_logits,
+                layout=layout,
+                confidence=confidence,
+                confidence_raw=proposal.confidence_raw,
+                prefix_lens=prefix_lens,
+                draft_tokens=draft_tokens,
+                draft_block=draft_block,
+                sampling_info=sampling_info,
+                correct_len=accept.correct_len,
+                cap_trim_lens=accept.cap_trim_lens,
+                bonus=accept.bonus,
+                commit_lens=accept.commit_lens,
+                verify_token_budget=verify_token_budget,
+                req_pool_indices=batch.req_pool_indices,
+                verify_tier_num_tokens=int(batch.spec_verify_tier_num_tokens),
+                dp_tier_num_tokens=self._dp_verify_tier_num_tokens(batch),
+            )
 
         next_draft_input = make_next_draft_input(
             bonus_tokens=accept.bonus,

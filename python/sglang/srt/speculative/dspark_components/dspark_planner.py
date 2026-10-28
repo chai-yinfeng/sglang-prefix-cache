@@ -442,6 +442,42 @@ class DSparkVerifyPlanner:
                     tier_num_reqs=global_num_reqs,
                 )
             return None
+        return self._layout_from_verify_lens(
+            verify_lens=verify_lens,
+            device=device,
+            budget=budget,
+            global_num_reqs=global_num_reqs,
+            dp_tier_num_tokens=dp_tier_num_tokens,
+        )
+
+    def bonus_only_layout(
+        self,
+        *,
+        req_pool_indices: torch.Tensor,
+        device: torch.device,
+        global_num_reqs: Optional[int] = None,
+        dp_tier_num_tokens: Optional[int] = None,
+    ) -> Optional[RaggedVerifyLayout]:
+        """Verify only each request's root token: the step is a plain target decode."""
+        return self._layout_from_verify_lens(
+            verify_lens=torch.ones(
+                int(req_pool_indices.shape[0]), dtype=torch.int32, device=device
+            ),
+            device=device,
+            budget=0,
+            global_num_reqs=global_num_reqs,
+            dp_tier_num_tokens=dp_tier_num_tokens,
+        )
+
+    def _layout_from_verify_lens(
+        self,
+        *,
+        verify_lens: torch.Tensor,
+        device: torch.device,
+        budget: Optional[int],
+        global_num_reqs: Optional[int],
+        dp_tier_num_tokens: Optional[int],
+    ) -> Optional[RaggedVerifyLayout]:
         bs = int(verify_lens.shape[0])
         tier_num_reqs = bs if global_num_reqs is None else global_num_reqs
         if dp_tier_num_tokens is not None:

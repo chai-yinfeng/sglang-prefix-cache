@@ -1,0 +1,5 @@
+algo,workload,concurrency,output_tok_s,median_ttft_ms,median_tpot_ms,accept_length,max_concurrent_requests,kv_tokens_during_run,note
+dspark-m085-mem,w2-shared-prefix,64,1347,,,,,52288,round-2 R3: growth capped by the 1x VA reservation
+dspark-m085-mem-va2,w2-shared-prefix,16,784,394,12.6,2.94,29,40128,
+dspark-m085-mem-va2,w2-shared-prefix,32,980,2159,13.5,2.92,45,40128->56960,grown at 23:21:14 near the end of this run
+dspark-m085-mem-va2,w2-shared-prefix,64,1378,3230,16.0,2.84,87,56960,

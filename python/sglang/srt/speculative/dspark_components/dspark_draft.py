@@ -108,6 +108,36 @@ def make_next_draft_input(
     return make_draft_input_v2(bonus_tokens=bonus_tokens, new_seq_lens=new_seq_lens)
 
 
+def bonus_only_proposal(
+    *,
+    draft_input: DFlashDraftInputV2,
+    bs: int,
+    gamma: int,
+    sampling_info,
+    device: torch.device,
+) -> DraftProposal:
+    """A proposal made without the draft model, for a step that verifies only roots.
+
+    Every draft repeats the bonus token, so even a verify path that ignores the
+    layout feeds valid ids; the one-hot accept keeps any such step exact.
+    """
+    # [bs, gamma] like a real proposal's: the ragged-window kernel strides rows by gamma.
+    repeated = (
+        draft_input.bonus_tokens.view(bs, 1).to(torch.long).expand(bs, gamma)
+    ).contiguous()
+    params = resolve_draft_params(sampling_info=sampling_info, bs=bs, device=device)
+    return DraftProposal(
+        draft_block_ids=repeated,
+        draft_block=DraftBlockResult(
+            draft_tokens=repeated,
+            corrected_logits=None,
+            greedy_mask=params.greedy_mask,
+            temperatures=params.temperatures,
+            greedy_draft=True,
+        ),
+    )
+
+
 def resolve_greedy_mask(
     *,
     bs: int,

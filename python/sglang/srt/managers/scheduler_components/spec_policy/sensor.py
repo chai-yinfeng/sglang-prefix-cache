@@ -49,13 +49,15 @@ class SpecPolicySensor:
         free_gpu_bytes: Optional[int] = None,
     ) -> Observation:
         self._step += 1
+        step_ms = num_accept_tokens = None
         if forward_mode.is_decode() and batch_size > 0:
-            self._observe_decode(
+            step_ms = self._observe_decode(
                 batch_size=batch_size,
                 num_correct_drafts=num_correct_drafts,
                 num_verify_tokens_per_req=num_verify_tokens_per_req,
                 now=now,
             )
+            num_accept_tokens = batch_size + num_correct_drafts
         else:
             # A prefill between two decodes is not part of the decode cadence.
             self._last_decode_ts = None
@@ -72,6 +74,8 @@ class SpecPolicySensor:
             ),
             mamba=_mamba_usage(pool_stats),
             step_ms_ema=self._step_ms_ema,
+            step_ms=step_ms,
+            num_accept_tokens=num_accept_tokens,
             accept_length_ema=self._accept_length_ema,
             num_verify_tokens_per_req=self._num_verify_tokens_per_req,
             free_gpu_bytes=free_gpu_bytes,
@@ -89,11 +93,11 @@ class SpecPolicySensor:
         num_correct_drafts: int,
         num_verify_tokens_per_req: Optional[int],
         now: float,
-    ) -> None:
+    ) -> Optional[float]:
+        step_ms = None
         if self._last_decode_ts is not None:
-            self._step_ms_ema = _ema(
-                self._step_ms_ema, (now - self._last_decode_ts) * 1000, self._ema_alpha
-            )
+            step_ms = (now - self._last_decode_ts) * 1000
+            self._step_ms_ema = _ema(self._step_ms_ema, step_ms, self._ema_alpha)
         self._last_decode_ts = now
         if num_verify_tokens_per_req is not None:
             self._num_verify_tokens_per_req = num_verify_tokens_per_req
@@ -102,3 +106,4 @@ class SpecPolicySensor:
                 1 + num_correct_drafts / batch_size,
                 self._ema_alpha,
             )
+        return step_ms

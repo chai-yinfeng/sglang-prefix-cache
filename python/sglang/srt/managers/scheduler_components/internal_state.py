@@ -178,6 +178,9 @@ class SchedulerInternalStateController:
             "dspark_force_budget_frac": _UpdateHandler(
                 self._validate_dspark_budget_frac, self._apply_dspark_budget_frac
             ),
+            "dspark_spec_paused": _UpdateHandler(
+                self._validate_dspark_spec_paused, self._apply_dspark_spec_paused
+            ),
             "dspark_clear_info_records": _UpdateHandler(
                 self._validate_dspark_clear_records, self._apply_dspark_clear_records
             ),
@@ -223,6 +226,19 @@ class SchedulerInternalStateController:
         self.scheduler.draft_worker.set_dspark_forced_budget_frac(
             None if value is None else float(value)
         )
+
+    def _validate_dspark_spec_paused(self, key: str, value: Any) -> None:
+        self._require_dspark_worker(key, "set_dspark_spec_paused")
+        # The request IPC carries a JSON bool as 0 / 1.
+        if value not in (0, 1):
+            raise UpdateRejected(f"{key} must be a bool, got {value!r}.")
+        if value and not self.scheduler.draft_worker.supports_spec_pause:
+            raise UpdateRejected(
+                f"{key} needs compact ragged verify with a verify budget planner."
+            )
+
+    def _apply_dspark_spec_paused(self, key: str, value: Any) -> None:
+        self.scheduler.draft_worker.set_dspark_spec_paused(bool(value))
 
     def _validate_dspark_clear_records(self, key: str, value: Any) -> None:
         self._require_dspark_worker(key, "clear_info_records")

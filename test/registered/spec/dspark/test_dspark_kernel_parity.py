@@ -508,6 +508,34 @@ class TestDsparkKernelParity(CustomTestCase):
             with self.subTest(kernel=name):
                 case(self)
 
+    def test_paused_step_verifies_each_bonus_token(self):
+        """A paused step's proposal must feed the ragged-window gather each request's
+        bonus token; the triton gather strides draft block rows by gamma."""
+        from sglang.srt.speculative.draft_worker_common import make_draft_input_v2
+        from sglang.srt.speculative.dspark_components.dspark_draft import (
+            bonus_only_proposal,
+        )
+
+        bs, gamma = 5, 7
+        bonus = _ri(0, VOCAB, (bs,))
+        proposal = bonus_only_proposal(
+            draft_input=make_draft_input_v2(
+                bonus_tokens=bonus,
+                new_seq_lens=torch.full((bs,), 9, device=DEVICE),
+            ),
+            bs=bs,
+            gamma=gamma,
+            sampling_info=None,
+            device=DEVICE,
+        )
+        ids = dspark_verify_window.CompactVerifyIds.triton(
+            draft_block_ids=proposal.draft_block_ids,
+            draft_tokens=proposal.draft_block.draft_tokens,
+            layout=_layout(torch.ones(bs, dtype=torch.int32, device=DEVICE), bs),
+            device=DEVICE,
+        )
+        self.assertTrue(torch.equal(ids, bonus))
+
 
 if __name__ == "__main__":
     unittest.main()

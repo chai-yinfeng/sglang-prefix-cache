@@ -25,6 +25,10 @@ class Observation(msgspec.Struct, frozen=True, omit_defaults=True):
     mamba: Optional[PoolUsage] = None
     # Wall time between consecutive decode results; None until two decode steps run back to back.
     step_ms_ema: Optional[float] = None
+    # This decode step's wall time; None unless the previous result was a decode too.
+    step_ms: Optional[float] = None
+    # Tokens this decode step committed across the batch, bonus included.
+    num_accept_tokens: Optional[int] = None
     # Tokens per request per verify step, bonus included (paper tau).
     accept_length_ema: Optional[float] = None
     num_verify_tokens_per_req: Optional[int] = None
@@ -43,3 +47,5 @@ class SpecPolicyPlan(msgspec.Struct, frozen=True, omit_defaults=True):
     low_priority_weight: Optional[float] = None
     # Token KV capacity to grow to while serving; None = keep the startup size.
     target_kv_tokens: Optional[int] = None
+    # Skip the draft and verify only each request's root; None = never touched.
+    spec_paused: Optional[bool] = None

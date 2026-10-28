@@ -249,7 +249,15 @@ class Spec(msgspec.Struct):
         Optional[str], "Directory to write decoupled speculative decoding trace files."
     ] = None
     speculative_policy: A[
-        Literal["none", "observe", "load-aware", "priority", "memory", "conditional"],
+        Literal[
+            "none",
+            "observe",
+            "load-aware",
+            "priority",
+            "memory",
+            "regime",
+            "conditional",
+        ],
         "Scheduler-side policy layer that reads speculative-decoding and memory-pool "
         "signals each step and adjusts speculation. 'none' disables it; 'observe' "
         "collects observations (see --speculative-policy-trace-path) without acting; "
@@ -259,7 +267,9 @@ class Spec(msgspec.Struct):
         "verify) ranks verify slots by accept probability x request weight, "
         "discounting requests without a positive priority; 'memory' grows the token "
         "KV pool into device memory that stays free under load (post-capture KV "
-        "sizing, paged MHA pools); 'conditional' combines 'priority' and 'memory'.",
+        "sizing, paged MHA pools); 'regime' (DSpark compact ragged verify) pauses "
+        "drafting while measured decode goodput is higher without it; 'conditional' "
+        "combines 'regime', 'priority' and 'memory'.",
     ] = "none"
     speculative_policy_trace_path: A[
         Optional[str],
