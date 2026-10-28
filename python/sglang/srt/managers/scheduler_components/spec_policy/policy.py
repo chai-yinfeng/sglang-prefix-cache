@@ -346,7 +346,8 @@ class SpecWidthPolicy:
     tried (at small batches that pins the full block, where noisy windows would
     otherwise wander narrower); and a compute-bound step that commits less than
     half of its window jumps straight to the widest rung under
-    _WIDTH_MAX_VERIFY_TOKENS -- on the first step of a load jump that overshoots it
+    _WIDTH_MAX_VERIFY_TOKENS -- on any window that overshoots it, between rounds or
+    while climbing narrower, and on the first step of a load jump that overshoots it
     twice, rather than after a window of slow steps. High-acceptance workloads keep
     wide windows, since the climb itself may go back up. A window also closes early
     once it verified _WIDTH_WINDOW_VERIFY_TOKENS, so wide steps under load are not
@@ -397,6 +398,9 @@ class SpecWidthPolicy:
                     self._round = None
                     self._move(self._floor_index)
                     self._decide_at(window.mean_batch_size)
+                elif self._overshoots_the_ceiling(window):
+                    # A load that crept past the ceiling narrows now, not a round later.
+                    self._jump_and_climb(window.mean_batch_size)
                 elif self._round is not None:
                     self._continue_round(window)
                 else:
@@ -496,6 +500,11 @@ class SpecWidthPolicy:
         ):
             return self._index
         return self._ceiling_index(window.mean_batch_size)
+
+    def _overshoots_the_ceiling(self, window: _GoodputWindow) -> bool:
+        """A wasteful compute-bound window outside a climb toward wider rungs."""
+        climbing_wider = self._round is not None and self._round.direction < 0
+        return not climbing_wider and self._jump_index(window) > self._index
 
     def _wastes_a_load_jump(self, batch_size: int) -> bool:
         last = self._last_window

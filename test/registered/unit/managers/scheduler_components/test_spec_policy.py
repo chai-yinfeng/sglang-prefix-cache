@@ -477,6 +477,25 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(policy, plan, steps=1, batch_size=64, survival=0.85)
         self.assertEqual(plan.verify_width, 4)
 
+    def test_a_load_creeping_past_the_ceiling_narrows_within_a_window(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
+        policy = SpecWidthPolicy(max_width=16)
+        # Twelve requests: the climb ends at width 8 one window before the ramp.
+        plan = _width_steps(
+            policy, SpecPolicyPlan(), steps=5 * window, batch_size=12, survival=0.75
+        )
+        self.assertEqual(plan.verify_width, 8)
+        # Open-loop arrivals grow the batch to 40 before the next round may start;
+        # width 8 now verifies 320 tokens a step and commits 3.6 of each 8.
+        for batch_size in range(14, 41, 2):
+            plan = _width_steps(
+                policy, plan, steps=4, batch_size=batch_size, survival=0.75
+            )
+        plan = _width_steps(policy, plan, steps=window, batch_size=40, survival=0.75)
+        self.assertLessEqual(plan.verify_width * 40, mod._WIDTH_MAX_VERIFY_TOKENS)
+
     def test_a_wide_window_under_load_closes_early(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
