@@ -350,24 +350,11 @@ class SpecWidthPolicy:
     twice, rather than after a window of slow steps. High-acceptance workloads keep
     wide windows, since the climb itself may go back up. A window also closes early
     once it verified _WIDTH_WINDOW_VERIFY_TOKENS, so wide steps under load are not
-    measured for seconds. When narrow widths have verify graphs only up to some
-    batch size, a batch that small only considers widths with graphs: eager narrow
-    verify costs 9-15% there, while past it eager runs as fast as a graph.
+    measured for seconds.
     """
 
-    def __init__(
-        self,
-        *,
-        max_width: int,
-        graph_widths: frozenset[int] = frozenset(),
-        max_graph_batch_size: int = 0,
-    ) -> None:
+    def __init__(self, *, max_width: int) -> None:
         self._ladder = (max_width, *(w for w in _WIDTH_LADDER if w < max_width))
-        # Narrow widths with verify graphs up to max_graph_batch_size requests; empty
-        # when none were captured, and then every width stays a candidate.
-        self._graph_widths = graph_widths
-        self._max_graph_batch_size = max_graph_batch_size
-        self._batch_size = 0.0
         self._index = 0
         self._round: Optional[_ClimbRound] = None
         # Narrowest ladder index the current load allows.
@@ -404,11 +391,8 @@ class SpecWidthPolicy:
                 window = self._window
                 self._window = _GoodputWindow(settle_steps=0)
                 self._last_window = (self.width, window.accept_length)
-                self._batch_size = window.mean_batch_size
                 self._floor_index = self._narrowest_index(window.mean_batch_size)
-                if self._index > self._floor_index or not self._allowed(
-                    self.width, window.mean_batch_size
-                ):
+                if self._index > self._floor_index:
                     # The load fell under the floor: the floor dominates, even mid-round.
                     self._round = None
                     self._move(self._floor_index)
@@ -491,18 +475,7 @@ class SpecWidthPolicy:
         self._decide_at(window.mean_batch_size)
 
     def _in_ladder(self, index: int) -> bool:
-        return 0 <= index <= self._floor_index and self._allowed(
-            self._ladder[index], self._batch_size
-        )
-
-    def _allowed(self, width: int, batch_size: float) -> bool:
-        """Whether a width replays a graph at this batch size, or eager costs nothing."""
-        return (
-            not self._graph_widths
-            or width == self._ladder[0]
-            or width in self._graph_widths
-            or batch_size > self._max_graph_batch_size
-        )
+        return 0 <= index <= self._floor_index
 
     def _narrowest_index(self, batch_size: float) -> int:
         return max(
@@ -510,7 +483,6 @@ class SpecWidthPolicy:
                 i
                 for i, width in enumerate(self._ladder)
                 if width * batch_size >= _WIDTH_MIN_VERIFY_TOKENS
-                and self._allowed(width, batch_size)
             ),
             default=0,
         )
@@ -536,7 +508,6 @@ class SpecWidthPolicy:
         )
 
     def _jump_and_climb(self, batch_size: int) -> None:
-        self._batch_size = batch_size
         self._floor_index = self._narrowest_index(batch_size)
         index = self._ceiling_index(batch_size)
         self._move(index)
@@ -549,7 +520,6 @@ class SpecWidthPolicy:
                 i
                 for i, width in enumerate(self._ladder)
                 if width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
-                and self._allowed(width, batch_size)
             ),
             len(self._ladder) - 1,
         )
@@ -584,8 +554,6 @@ def build_spec_policy(
     sps_table_path: Optional[str],
     ledger: Optional[MemoryLedger] = None,
     max_verify_width: Optional[int] = None,
-    graph_widths: frozenset[int] = frozenset(),
-    max_graph_batch_size: int = 0,
 ) -> SpecPolicy:
     if name == "observe":
         return ObservePolicy()
@@ -596,11 +564,7 @@ def build_spec_policy(
     if name == "regime":
         return SpecRegimePolicy()
     if name == "width":
-        return SpecWidthPolicy(
-            max_width=max_verify_width,
-            graph_widths=graph_widths,
-            max_graph_batch_size=max_graph_batch_size,
-        )
+        return SpecWidthPolicy(max_width=max_verify_width)
     if name == "conditional":
         return CompositePolicy(
             [

@@ -64,20 +64,14 @@ class SpecPolicyController:
                 "with compact ragged verify and a verify budget planner."
             )
         max_verify_width = None
-        graph_widths: frozenset[int] = frozenset()
-        max_graph_batch_size = 0
         if policy_name == "width":
             max_verify_width = _max_verify_width(draft_worker)
-            graph_widths = draft_worker.verify_graph_widths
-            max_graph_batch_size = draft_worker.verify_graph_max_batch_size
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
         self.policy = build_spec_policy(
             name=policy_name,
             sps_table_path=sps_table_path,
             ledger=ledger,
             max_verify_width=max_verify_width,
-            graph_widths=graph_widths,
-            max_graph_batch_size=max_graph_batch_size,
         )
         self.actuator = SpecPolicyActuator(
             draft_worker=draft_worker, grow_kv_pool=grow_kv_pool
