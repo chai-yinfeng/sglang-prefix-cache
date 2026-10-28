@@ -587,6 +587,9 @@ class Envs:
     SGLANG_AITER_PAGED_PREFILL_ASM = EnvBool(True)
     # size the KV pool after CUDA-graph capture
     SGLANG_ENABLE_POST_CAPTURE_KV_SIZING = EnvBool(False)
+    # Virtual-address span of the post-capture KV pool as a multiple of its
+    # pre-capture size; above 1 the pool can be grown while serving.
+    SGLANG_POST_CAPTURE_KV_RESERVE_FACTOR = EnvFloat(1.0)
 
     # ===================================================================
     # Scheduler token budgeting and admission

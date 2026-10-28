@@ -2240,6 +2240,8 @@ class MHATokenToKVPool(KVCache):
         )
         self.post_capture_active = post_capture_active
         self._post_capture_owner = None
+        # Tokens the buffers span; only a post-capture pool spans more than it serves.
+        self._reserve_size = self._post_capture_reserve_size()
         self.head_num = swa_head_num if swa_head_num is not None else head_num
         self.head_dim = swa_head_dim if swa_head_dim is not None else head_dim
         self.v_head_dim = (
@@ -2515,14 +2517,22 @@ class MHATokenToKVPool(KVCache):
             device=self.device,
         )
 
+    def _post_capture_reserve_size(self) -> int:
+        if not self.post_capture_active:
+            return self.size
+        factor = max(envs.SGLANG_POST_CAPTURE_KV_RESERVE_FACTOR.get(), 1.0)
+        reserve = int(self.size * factor) // self.page_size * self.page_size
+        return max(reserve, self.size)
+
     def _kv_buffer_shapes(self):
         """(k_shape, v_shape)"""
         if self.use_hnd:
+            num_pages = (self._reserve_size + self.page_size) // self.page_size
             return (
-                (self.num_pages, self.head_num, self.page_size, self.head_dim),
-                (self.num_pages, self.head_num, self.page_size, self.v_head_dim),
+                (num_pages, self.head_num, self.page_size, self.head_dim),
+                (num_pages, self.head_num, self.page_size, self.v_head_dim),
             )
-        rows = self.size + self.page_size
+        rows = self._reserve_size + self.page_size
         return (
             (rows, self.head_num, self.head_dim),
             (rows, self.head_num, self.v_head_dim),
@@ -2601,7 +2611,7 @@ class MHATokenToKVPool(KVCache):
             v_shape = tuple(self.v_buffer[0].shape)
         else:
             k_shape, v_shape = self._kv_buffer_shapes()
-        num_slots = self.size + self.page_size
+        num_slots = self._reserve_size + self.page_size
         tokens_per_row = self._kv_tokens_per_row()
         expected_rows = num_slots // tokens_per_row
         for shape in (k_shape, v_shape):
@@ -2639,7 +2649,7 @@ class MHATokenToKVPool(KVCache):
             device_id=device_id,
             store_dtype=self.store_dtype,
             page_size=self.page_size,
-            reserved_num_tokens=self.size,
+            reserved_num_tokens=self._reserve_size,
             buffer_descs=self._build_kv_buffer_descs(),
         )
         self._assign_post_capture_tensors(self._post_capture_owner.tensors)
