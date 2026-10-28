@@ -1,5 +1,7 @@
 # 提升空间地图（第一阶段 P5，2026-10-27）
 
+> 2026-10-27 更新：后续调查见 `phase1-followups-v0.5.22/FINDINGS.md`。其中修正了两点：现有系统并非完全没有显存管理（有分组件的池子、HiCache、hybrid 统一字节池），只是不会随负载把 draft 权重、graph、verify 空间还给 target；MTP 那 5 GB 闲置已用诊断补丁证实。
+
 依据：`02-results-A-qwen3-8b.md`（Qwen3-8B dense，BF16）和 `03-results-B-qwen38-27b.md`（Qwen3.8-27B NVFP4 hybrid），单卡 RTX 5090 32GB，SGLang v0.5.22。A 组主要结果做过两轮，比值中位数 1.000；B 组为单次运行。
 
 ## 一句话
