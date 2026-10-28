@@ -1,0 +1,11 @@
+config,post_capture_kv_sizing,kv_tokens,workload,concurrency,output_tok_s,median_ttft_ms,median_tpot_ms,p99_tpot_ms,accept_length,max_concurrent_requests
+plain-fa4,False,58687,w2-shared-prefix,16,665.5,676.3,16.65,27.36,,32
+plain-fa4,False,58687,w2-shared-prefix,64,1006.3,5146.9,20.01,37.5,,101
+dspark-fa4,False,38093,w2-shared-prefix,16,588.9,1144.4,17.1,31.23,2.97,24
+dspark-fa4,False,38093,w2-shared-prefix,64,684.5,8524.7,16.65,26.81,2.987,77
+dspark-pcs,True,60775,w1-natural,64,2068.4,332.4,24.39,84.59,2.807,85
+dspark-pcs,True,60775,w2-shared-prefix,16,869.3,335.2,12.6,31.31,2.987,28
+dspark-pcs,True,60775,w2-shared-prefix,64,1087.5,3834.3,24.9,42.29,2.984,95
+dspark-pcs-090,True,51347,w1-natural,64,2098.2,333.8,24.46,84.46,2.809,85
+dspark-pcs-090,True,51347,w2-shared-prefix,16,797.2,340.9,14.99,31.35,2.983,28
+dspark-pcs-090,True,51347,w2-shared-prefix,64,915.5,5669.1,22.47,32.94,2.98,80

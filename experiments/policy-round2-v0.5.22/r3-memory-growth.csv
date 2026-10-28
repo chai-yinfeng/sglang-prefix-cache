@@ -1,0 +1,8 @@
+config,policy,workload,concurrency,output_tok_s,median_ttft_ms,p99_ttft_ms,median_tpot_ms,accept_length,max_concurrent_requests
+dspark-m085,observe,w2-shared-prefix,16,777.2,461.7,2620.5,12.71,2.938,29
+dspark-m085,observe,w2-shared-prefix,32,952.3,2189.0,5752.0,11.0,2.972,45
+dspark-m085,observe,w2-shared-prefix,64,1144.5,5093.7,9366.2,10.31,2.981,82
+dspark-m085-mem,memory,w1-natural,64,2415.4,296.9,2171.6,18.15,2.4,85
+dspark-m085-mem,memory,w2-shared-prefix,16,777.1,491.0,2640.5,12.82,2.929,29
+dspark-m085-mem,memory,w2-shared-prefix,32,975.0,2178.3,5774.5,12.78,2.954,45
+dspark-m085-mem,memory,w2-shared-prefix,64,1347.5,3744.1,8171.7,14.48,2.868,83

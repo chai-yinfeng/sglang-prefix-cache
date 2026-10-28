@@ -1,0 +1,7 @@
+config,tree_core,eviction,workload,concurrency,output_tok_s,prefix_hit_rate,median_ttft_ms,p99_ttft_ms,median_tpot_ms
+dspark-full,rust,lru,w3-mixed-prefix,16,427.4,0.673,1506.9,6376.3,20.72
+dspark-full,rust,lru,w3-mixed-prefix,64,486.4,0.741,12194.5,17522.1,19.61
+dspark-full-pylru,python,lru,w3-mixed-prefix,16,426.1,0.673,1544.3,6405.6,20.46
+dspark-full-pylru,python,lru,w3-mixed-prefix,64,468.2,0.728,12574.8,18962.5,20.47
+dspark-full-vd,python,value-density,w3-mixed-prefix,16,419.5,0.67,1506.2,6405.7,20.24
+dspark-full-vd,python,value-density,w3-mixed-prefix,64,485.7,0.749,12345.0,19444.8,19.16

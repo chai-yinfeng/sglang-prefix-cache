@@ -1,0 +1,11 @@
+config,kv_tokens,hicache,eviction,concurrency,output_tok_s,prefix_hit_rate,median_ttft_ms,median_tpot_ms,max_concurrent_requests
+plain-pcs,90240,False,lru,16,653.7,0.723,694.2,16.74,32
+plain-pcs,90240,False,lru,64,1520.3,0.885,789.7,25.52,127
+plain-pcs-hicache,90240,True,lru,16,646.8,0.723,706.5,16.76,32
+plain-pcs-hicache,90240,True,lru,64,1501.2,0.888,874.2,24.53,127
+dspark-pcs-p64,61184,False,lru,16,832.2,0.724,57.1,12.36,29
+dspark-pcs-p64,61184,False,lru,64,1064.5,0.79,3920.2,25.29,83
+dspark-pcs-hicache,61184,True,lru,16,820.4,0.724,47.2,13.0,30
+dspark-pcs-hicache,61184,True,lru,64,1285.8,0.875,3010.6,20.51,93
+dspark-pcs-hicache-lfu,61184,True,lfu,16,822.7,0.724,47.3,12.99,30
+dspark-pcs-hicache-lfu,61184,True,lfu,64,1275.8,0.871,3084.9,20.8,93

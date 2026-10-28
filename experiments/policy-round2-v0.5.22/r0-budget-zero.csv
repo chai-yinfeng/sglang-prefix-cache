@@ -1,0 +1,5 @@
+verify_budget,workload,concurrency,output_tok_s,median_tpot_ms,accept_length,note
+planner,w2-shared-prefix,64,1402.7,17.12,2.798,
+planner,w1-natural,64,1464.1,29.92,1.0,frac still 0.0001 (harness did not reset the budget between workloads)
+frac0.0001,w2-shared-prefix,64,794.5,27.3,1.0,
+frac0.0001,w1-natural,64,1465.0,29.83,1.0,

@@ -1,0 +1,10 @@
+config,concurrency,output_tok_s,median_tpot_ms,p99_tpot_ms,per_req_tpot_p50_ms,per_req_tpot_p90_ms,per_req_tpot_p99_ms,accept_length
+dspark-loadaware,1,182.4,5.24,8.24,5.22,6.44,7.5,2.767
+dspark-loadaware,16,1373.8,8.59,44.95,8.39,11.86,20.81,2.793
+dspark-loadaware,32,1712.5,14.52,49.74,14.09,21.01,48.37,2.795
+dspark-loadaware,4,607.0,6.0,8.96,5.99,7.25,8.96,2.803
+dspark-loadaware,64,2537.8,17.39,97.96,17.51,26.91,58.24,2.412
+dspark-fa4,16,1460.1,8.31,22.03,8.1,10.89,16.11,2.8
+dspark-fa4,32,1739.4,14.17,50.6,13.53,21.0,50.27,2.806
+dspark-compact,16,1438.8,8.73,23.38,8.4,11.26,17.13,2.788
+dspark-compact,32,1964.3,11.26,48.67,11.26,18.27,40.08,2.611

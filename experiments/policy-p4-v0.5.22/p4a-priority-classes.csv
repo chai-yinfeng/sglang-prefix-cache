@@ -1,0 +1,9 @@
+config,verify_weighting,concurrency,output_tok_s,priority_class,num_requests,tpot_p50_ms,tpot_p90_ms,tpot_mean_ms,ttft_p50_ms,ttft_p90_ms
+dspark-prio-off,False,32,2802.5,high,64,10.08,11.97,9.81,53.86,217.01
+dspark-prio-off,False,32,2802.5,low,192,10.05,11.92,9.94,54.03,217.54
+dspark-prio-off,False,64,3471.9,high,64,14.73,18.92,14.63,237.58,554.48
+dspark-prio-off,False,64,3471.9,low,192,14.84,18.07,14.83,268.68,1123.66
+dspark-prio-on,True,32,2786.6,high,64,9.26,11.14,9.28,53.83,228.04
+dspark-prio-on,True,32,2786.6,low,192,10.39,12.43,10.31,53.7,228.26
+dspark-prio-on,True,64,3356.9,high,64,13.37,15.57,13.01,280.44,564.8
+dspark-prio-on,True,64,3356.9,low,192,16.34,19.81,16.07,257.17,1142.0
