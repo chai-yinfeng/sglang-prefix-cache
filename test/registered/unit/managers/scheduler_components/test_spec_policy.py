@@ -477,22 +477,6 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(policy, plan, steps=1, batch_size=64, survival=0.85)
         self.assertEqual(plan.verify_width, 4)
 
-    def test_open_loop_backlog_does_not_reward_a_slow_width(self):
-        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
-
-        # Open-loop arrivals: a width that serves each request slower keeps more
-        # requests running. Width 6 then shows the most total goodput (24 requests,
-        # 3.6 tokens/ms) though width 4 decodes each request faster (16 requests,
-        # 0.19 vs 0.15 tokens/ms per request) and is what keeps the queue short.
-        batch_of = {16: 40, 8: 28, 6: 24, 4: 16, 3: 16, 2: 16, 1: 16}
-        policy, plan = SpecWidthPolicy(max_width=16), SpecPolicyPlan()
-        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
-        for _ in range(12 * window):
-            plan = _width_steps(
-                policy, plan, steps=1, batch_size=batch_of[policy.width]
-            )
-        self.assertEqual(plan.verify_width, 4)
-
     def test_small_batches_only_choose_widths_with_graphs(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 

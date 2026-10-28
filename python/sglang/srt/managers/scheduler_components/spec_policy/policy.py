@@ -227,11 +227,6 @@ class _GoodputWindow:
         return self._batch_sum / self.steps if self.steps else 0.0
 
     @property
-    def tokens_per_request_sec(self) -> float:
-        """Decode speed one request sees: the inverse of time per output token."""
-        return self._tokens / self._batch_sum / self._ms * 1000 if self._ms > 0 else 0.0
-
-    @property
     def accept_length(self) -> float:
         return self._tokens / self._batch_sum if self._batch_sum else 0.0
 
@@ -331,7 +326,7 @@ class _ClimbRound(msgspec.Struct):
     direction: int
     # None until a window at the standing width is measured; the window that
     # started the round may straddle the load change that triggered it.
-    reference_rate: Optional[float] = None
+    reference_tokens_per_sec: Optional[float] = None
     flipped: bool = False
 
 
@@ -345,10 +340,6 @@ class SpecWidthPolicy:
     (narrower when the load grew, wider when it fell), keeps climbing while each
     rung beats the last by a margin,
     tries the other direction once if the first rung loses, and otherwise stays.
-    Rungs are compared by the decode speed one request sees (tokens per request
-    per second): at a fixed concurrency that ranks widths as total goodput does,
-    while under open-loop arrivals total goodput would reward a slow width for the
-    backlog it builds.
     Windows only count steps that actually ran at the width being measured. Two
     verify-token bounds shortcut the climb: a width whose step would carry fewer
     than _WIDTH_MIN_VERIFY_TOKENS costs no less than a wider one, so it is never
@@ -461,8 +452,8 @@ class SpecWidthPolicy:
 
     def _continue_round(self, window: _GoodputWindow) -> None:
         climb = self._round
-        if climb.reference_rate is None:
-            climb.reference_rate = window.tokens_per_request_sec
+        if climb.reference_tokens_per_sec is None:
+            climb.reference_tokens_per_sec = window.tokens_per_sec
             if not self._in_ladder(self._index + climb.direction):
                 climb.direction = -climb.direction
                 climb.flipped = True
@@ -471,10 +462,10 @@ class SpecWidthPolicy:
             else:
                 self._end_round(window)
             return
-        if window.tokens_per_request_sec > climb.reference_rate * (
+        if window.tokens_per_sec > climb.reference_tokens_per_sec * (
             1 + _REGIME_SWITCH_MARGIN
         ):
-            climb.reference_rate = window.tokens_per_request_sec
+            climb.reference_tokens_per_sec = window.tokens_per_sec
             if self._in_ladder(self._index + climb.direction):
                 self._move(self._index + climb.direction)
                 return
