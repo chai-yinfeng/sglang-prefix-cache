@@ -248,6 +248,17 @@ class Spec(msgspec.Struct):
     spec_trace_dir: A[
         Optional[str], "Directory to write decoupled speculative decoding trace files."
     ] = None
+    speculative_policy: A[
+        Literal["none", "observe"],
+        "Scheduler-side policy layer that reads speculative-decoding and memory-pool "
+        "signals each step and adjusts speculation. 'none' disables it; 'observe' "
+        "collects observations (see --speculative-policy-trace-path) without acting.",
+    ] = "none"
+    speculative_policy_trace_path: A[
+        Optional[str],
+        "JSONL file the speculative policy layer appends one observation and plan "
+        "per scheduler step to, for offline replay. Omit to skip tracing.",
+    ] = None
 
     # -------------------------------------------------------------------------
     # Speculative decoding (ngram)

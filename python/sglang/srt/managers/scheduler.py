@@ -278,6 +278,9 @@ from sglang.srt.managers.scheduler_components.recv_skipper import (
 from sglang.srt.managers.scheduler_components.request_receiver import (
     SchedulerRequestReceiver,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.controller import (
+    SpecPolicyController,
+)
 from sglang.srt.managers.scheduler_components.weight_updater import (
     SchedulerWeightUpdaterManager,
 )
@@ -716,6 +719,8 @@ class Scheduler(
         self.init_batch_result_processor()
 
         self.init_internal_state()
+
+        self.maybe_init_spec_policy()
 
         self.init_rank_consensus_checker()
 
@@ -2581,6 +2586,17 @@ class Scheduler(
             scheduler=self,
             record_step_time=RECORD_STEP_TIME,
         )
+
+    def maybe_init_spec_policy(self) -> None:
+        """Build the per-step speculative policy layer (--speculative-policy)."""
+        self.spec_policy = None
+        if get_spec().speculative_policy != "none":
+            self.spec_policy = SpecPolicyController(
+                policy_name=get_spec().speculative_policy,
+                draft_worker=self.draft_worker,
+                trace_path=get_spec().speculative_policy_trace_path,
+                is_trace_writer=get_parallel().tp_rank == 0,
+            )
 
     def init_req_max_new_tokens(self, req):
         input_len = len(req.origin_input_ids)
@@ -4953,6 +4969,17 @@ class Scheduler(
         self.tree_cache.flush_pending_backups()
 
         self._record_step_counters(batch, result)
+
+        if self.spec_policy is not None and isinstance(result, GenerationBatchResult):
+            self.spec_policy.on_batch_result(
+                forward_mode=batch.forward_mode,
+                batch_size=batch.batch_size(),
+                num_correct_drafts=result.num_correct_drafts,
+                num_verify_tokens_per_req=result.speculative_num_draft_tokens,
+                num_running=len(self.running_batch.reqs),
+                num_queued=len(self.waiting_queue),
+                pool_stats=self.pool_stats_observer.get_pool_stats(),
+            )
 
         self.metrics_reporter.log_batch_result_stats(batch, result)
 
