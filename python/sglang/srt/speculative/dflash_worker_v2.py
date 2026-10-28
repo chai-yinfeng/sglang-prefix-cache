@@ -577,6 +577,9 @@ class DFlashWorkerV2(BaseSpecWorker):
         # Verify window each decode step runs (<= block_size); a narrower one runs
         # eager unless --speculative-dflash-verify-graph-widths captured it.
         self._verify_width = int(self.block_size)
+        # Narrow widths with verify graphs, and the largest batch those cover.
+        self.verify_graph_widths: frozenset[int] = frozenset()
+        self.verify_graph_max_batch_size = 0
         self._draft_block_spec_infos = {self._verify_width: self._draft_block_spec_info}
         self._draft_greedy_gathered_max_buf: Optional[torch.Tensor] = None
         self._draft_greedy_gathered_ids_buf: Optional[torch.Tensor] = None
@@ -771,6 +774,8 @@ class DFlashWorkerV2(BaseSpecWorker):
             )
             return
         self.model_runner.decode_cuda_graph_runner = runner
+        self.verify_graph_widths = runner.widths
+        self.verify_graph_max_batch_size = runner.max_batch_size
 
     def _prewarm_batch_size(self, block_size: int) -> int:
         """Largest batch the non-greedy verify path can see in one step."""

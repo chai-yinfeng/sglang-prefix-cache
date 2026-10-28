@@ -47,6 +47,10 @@ class VerifyWidthGraphRunner:
         self._by_width = by_width
         self._active = base
         self.capture_bs = base.capture_bs
+        self.widths = frozenset(by_width)
+        self.max_batch_size = max(
+            (max(runner.capture_bs) for runner in by_width.values()), default=0
+        )
 
     @property
     def bs(self) -> int:

@@ -512,6 +512,28 @@ class TestSpecWidthPolicy(CustomTestCase):
             )
         self.assertEqual(plan.verify_width, 4)
 
+    def test_small_batches_only_choose_widths_with_graphs(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
+        policy = SpecWidthPolicy(
+            max_width=16, graph_widths=frozenset({8, 6, 4}), max_graph_batch_size=32
+        )
+        # 24 requests: width 3 would run eager (no graph), so it is never probed,
+        # though without the graphs the climb visits it.
+        plan, seen = SpecPolicyPlan(), set()
+        for _ in range(20 * window):
+            plan = _width_steps(policy, plan, steps=1, batch_size=24)
+            seen.add(plan.verify_width)
+        self.assertLessEqual(seen, {16, 8, 6, 4})
+        # Past the graphs' batch sizes eager costs nothing: 64 requests climb to
+        # width 2, which has no graph.
+        policy = SpecWidthPolicy(
+            max_width=16, graph_widths=frozenset({8, 6, 4}), max_graph_batch_size=32
+        )
+        plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=64)
+        self.assertEqual(plan.verify_width, 2)
+
     def test_a_wide_window_under_load_closes_early(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
