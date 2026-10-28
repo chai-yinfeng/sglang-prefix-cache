@@ -1,5 +1,7 @@
 # Policy 第四轮：找 policy 真正起作用的场景（2026-10-28）
 
+不带术语的说明见 [EXPLAINER.md](EXPLAINER.md)。
+
 第三轮的结论是：在 Qwen3-8B + DSpark 上，policy 层基本不起作用。DSpark 自带的置信度规划器已经按负载调 verify 宽度，policy 的三个执行器只在特定条件下才动。这一轮把可能让 policy 起作用的实验都试一遍：
 
 | 编号 | 实验 | 结论 |
