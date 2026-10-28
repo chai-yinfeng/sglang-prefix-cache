@@ -55,9 +55,11 @@ from sglang.srt.mem_cache.evict_policy import (
     PriorityStrategy,
     SLRUStrategy,
     TLRUStrategy,
+    ValueDensityStrategy,
 )
 
 _EVICTION_POLICY_FACTORIES: dict[str, Callable[..., EvictionStrategy]] = {
+    "value-density": ValueDensityStrategy,
     "lru": LRUStrategy,
     "lfu": LFUStrategy,
     "fifo": FIFOStrategy,

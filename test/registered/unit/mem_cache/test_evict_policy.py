@@ -6,6 +6,7 @@ register_cpu_ci(est_time=6, suite="base-a-test-cpu")
 register_cpu_ci(est_time=5, suite="stage-b-test-cpu-intel")
 
 import unittest
+import unittest.mock
 from unittest.mock import MagicMock
 
 from sglang.srt.mem_cache.evict_policy import (
@@ -16,6 +17,7 @@ from sglang.srt.mem_cache.evict_policy import (
     MRUStrategy,
     PriorityStrategy,
     SLRUStrategy,
+    ValueDensityStrategy,
 )
 
 
@@ -185,6 +187,71 @@ class TestEvictionOrdering(unittest.TestCase):
         ]
         actual = [strategy.get_priority(n) for n in eviction_order]
         self.assertEqual(actual, expected)
+
+
+class _Node:
+    """Shape the value-density strategy reads: key, parent, hits, access time, evicted."""
+
+    def __init__(
+        self, tokens, parent=None, hit_count=0, last_access_time=0.0, evicted=False
+    ):
+        self.key = None if tokens is None else [0] * tokens
+        self.parent = parent
+        self.hit_count = hit_count
+        self.last_access_time = last_access_time
+        self.evicted = evicted
+
+
+class TestValueDensityStrategy(unittest.TestCase):
+    def setUp(self):
+        self.root = _Node(None)
+        patcher = unittest.mock.patch(
+            "sglang.srt.mem_cache.unified_cache.components.base.peek_time_counter",
+            return_value=100.0,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_host_tier_keeps_short_hot_prefixes_on_device(self):
+        # A host restore pays a fixed cost per fetch, so per resident token a short
+        # node is worth more and the long one is evicted first.
+        strategy = ValueDensityStrategy(host_tier=True)
+        short = _Node(1024, self.root, last_access_time=100.0)
+        long = _Node(12288, self.root, last_access_time=100.0)
+        self.assertLess(strategy.get_priority(long), strategy.get_priority(short))
+
+    def test_without_host_tier_deeper_tokens_cost_more(self):
+        # Prefill time is superlinear in depth: the same 2K tokens under a 12K prefix
+        # cost more to recompute than at the root.
+        strategy = ValueDensityStrategy(host_tier=False)
+        shallow = _Node(2048, self.root, last_access_time=100.0)
+        deep = _Node(2048, _Node(12288, self.root), last_access_time=100.0)
+        self.assertLess(strategy.get_priority(shallow), strategy.get_priority(deep))
+
+    def test_host_eviction_prices_recompute(self):
+        # A node already off device has no lower tier, even when HiCache is on.
+        strategy = ValueDensityStrategy(host_tier=True)
+        on_host = _Node(4096, self.root, last_access_time=100.0, evicted=True)
+        self.assertAlmostEqual(
+            strategy.refetch_ms(node=on_host, tokens=4096), strategy.prefill_ms(4096)
+        )
+
+    def test_idle_time_halves_reuse_per_half_life(self):
+        strategy = ValueDensityStrategy(host_tier=True, idle_half_life_ticks=50.0)
+        fresh = _Node(1024, self.root, hit_count=3, last_access_time=100.0)
+        idle = _Node(1024, self.root, hit_count=3, last_access_time=50.0)
+        self.assertAlmostEqual(
+            strategy.get_priority(idle), strategy.get_priority(fresh) / 2
+        )
+
+    def test_registered_as_a_policy_choice(self):
+        from sglang.srt.arg_groups.choices import RADIX_EVICTION_POLICY_CHOICES
+        from sglang.srt.mem_cache.utils import get_eviction_strategy
+
+        self.assertIn("value-density", RADIX_EVICTION_POLICY_CHOICES)
+        strategy = get_eviction_strategy("value-density", {"host_tier": True})
+        self.assertIsInstance(strategy, ValueDensityStrategy)
+        self.assertTrue(strategy.host_tier)
 
 
 if __name__ == "__main__":

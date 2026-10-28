@@ -44,6 +44,8 @@ logger = logging.getLogger(__name__)
 def _rust_fallback_reason(params: CacheInitParams) -> Optional[str]:
     if params.enable_session_radix_cache:
         return "session-aware caching requires the Python TreeCore"
+    if params.eviction_policy.lower() == "value-density":
+        return "the value-density eviction policy requires the Python TreeCore"
     if params.tree_components is not None and set(params.tree_components) - {
         ComponentType.FULL,
         ComponentType.SWA,

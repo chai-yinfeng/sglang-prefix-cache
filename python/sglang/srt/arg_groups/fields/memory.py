@@ -32,7 +32,9 @@ class Memory(msgspec.Struct):
                 "lower-priority requests first, and 'tlru' stands for "
                 "Tail-Optimized LRU (arXiv:2510.15152), which evicts the part of "
                 "a conversation that cannot affect tail TTFT before falling back "
-                "to LRU. See "
+                "to LRU, and 'value-density' evicts the node with the lowest "
+                "expected re-fetch cost per token (host restore with HiCache, "
+                "prefill otherwise; Python TreeCore). See "
                 "https://docs.sglang.io/docs/advanced_features/radix_eviction_policy "
                 "for what each policy optimizes for."
             ),

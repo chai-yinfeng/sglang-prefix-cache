@@ -164,6 +164,11 @@ def get_and_increase_time_counter() -> float64:
     return ret
 
 
+def peek_time_counter() -> float64:
+    """The next access time get_and_increase_time_counter will hand out."""
+    return _LAST_ACCESS_TIME_COUNTER_FLOAT
+
+
 def next_component_uuid(component_type: ComponentType) -> int:
     _COMPONENT_UUID_COUNTERS[component_type] += 1
     return _COMPONENT_UUID_COUNTERS[component_type]

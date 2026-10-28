@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import bisect
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Union
 
 if TYPE_CHECKING:
     from sglang.srt.mem_cache.radix_cache import TreeNode
@@ -98,3 +99,86 @@ class SLRUStrategy(EvictionStrategy):
 
         is_protected = 1 if node.hit_count >= self.protected_threshold else 0
         return (is_protected, node.last_access_time)
+
+
+# Measured on Qwen3-8B BF16 / RTX 5090 / FA4 (TTFT of a cold prefill of that many
+# tokens, ms); recalibrate per model and GPU through the policy config.
+_DEFAULT_PREFILL_MS_AT_TOKENS = (
+    (1024, 93.0),
+    (2048, 164.0),
+    (4096, 319.0),
+    (8192, 686.0),
+    (16384, 1567.0),
+)
+# Same setup, HiCache direct + layer_first host restore: fixed cost + per token.
+_DEFAULT_RESTORE_FIXED_MS = 15.0
+_DEFAULT_RESTORE_MS_PER_TOKEN = 0.0027
+# Arbitrary; logical-clock ticks (two per tree operation) after which an idle node's
+# hit count counts half.
+_DEFAULT_IDLE_HALF_LIFE_TICKS = 4096.0
+
+
+class ValueDensityStrategy(EvictionStrategy):
+    """Evict the node whose expected re-fetch cost per resident token is lowest.
+
+    value = reuse x refetch_ms / tokens, where reuse is the hit count decayed by
+    idle time (LRFU style). With a host tier (HiCache write-through) an evicted
+    device node survives on host, so its re-fetch is a host restore, whose fixed
+    cost favors keeping short hot prefixes on device; without one it is the
+    prefill of the node's tokens at its depth, which grows with depth.
+    """
+
+    def __init__(
+        self,
+        host_tier: bool = False,
+        idle_half_life_ticks: float = _DEFAULT_IDLE_HALF_LIFE_TICKS,
+        prefill_ms_at_tokens: Sequence[Sequence[float]] = _DEFAULT_PREFILL_MS_AT_TOKENS,
+        restore_fixed_ms: float = _DEFAULT_RESTORE_FIXED_MS,
+        restore_ms_per_token: float = _DEFAULT_RESTORE_MS_PER_TOKEN,
+    ):
+        self.host_tier = host_tier
+        self.idle_half_life_ticks = float(idle_half_life_ticks)
+        self._prefill_tokens = [float(t) for t, _ in prefill_ms_at_tokens]
+        self._prefill_ms = [float(ms) for _, ms in prefill_ms_at_tokens]
+        self.restore_fixed_ms = restore_fixed_ms
+        self.restore_ms_per_token = restore_ms_per_token
+
+    def get_priority(self, node: TreeNode) -> float:
+        # Imported here: components.base reaches mem_cache.utils, which imports this module.
+        from sglang.srt.mem_cache.unified_cache.components.base import (
+            peek_time_counter,
+        )
+
+        tokens = max(len(node.key), 1) if node.key is not None else 1
+        idle = max(peek_time_counter() - node.last_access_time, 0.0)
+        reuse = (node.hit_count + 1) * 0.5 ** (idle / self.idle_half_life_ticks)
+        return reuse * self.refetch_ms(node=node, tokens=tokens) / tokens
+
+    def refetch_ms(self, *, node: TreeNode, tokens: int) -> float:
+        # A device node evicted with a host tier survives on host; a node already
+        # off device (host eviction) has no lower tier and must be recomputed.
+        if self.host_tier and not node.evicted:
+            return self.restore_fixed_ms + self.restore_ms_per_token * tokens
+        end = _prefix_depth(node)
+        return self.prefill_ms(end) - self.prefill_ms(end - tokens)
+
+    def prefill_ms(self, tokens: float) -> float:
+        """Piecewise-linear prefill time; linear through the origin below the first probe."""
+        xs, ys = self._prefill_tokens, self._prefill_ms
+        if tokens <= 0:
+            return 0.0
+        if tokens <= xs[0]:
+            return ys[0] * tokens / xs[0]
+        i = min(bisect.bisect_left(xs, tokens), len(xs) - 1)
+        x0, x1, y0, y1 = xs[i - 1], xs[i], ys[i - 1], ys[i]
+        return y0 + (y1 - y0) * (tokens - x0) / (x1 - x0)
+
+
+def _prefix_depth(node: TreeNode) -> int:
+    """Tokens from the root through the end of this node."""
+    depth = 0
+    cur: Optional[TreeNode] = node
+    while cur is not None and cur.key is not None:
+        depth += len(cur.key)
+        cur = cur.parent
+    return depth
