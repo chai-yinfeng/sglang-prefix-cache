@@ -2768,6 +2768,28 @@ class KVCacheConfigurator:
 
         return base + additional_ratio
 
+    def _spec_state_memory_ratio(self, base_ratio: float) -> float:
+        from sglang.srt.managers.scheduler_components.spec_policy.memory_split import (
+            spec_state_memory_ratio,
+        )
+
+        ratio = spec_state_memory_ratio(
+            policy_name=get_spec().speculative_policy,
+            base_ratio=base_ratio,
+            slots_per_req=self._calculate_mamba_ratio(),
+            num_draft_tokens=get_spec().speculative_num_draft_tokens,
+        )
+        if ratio != base_ratio:
+            logger.info(
+                "Speculative policy %s scales the mamba state:KV memory ratio "
+                "%.2f -> %.2f for %d verify states per request.",
+                get_spec().speculative_policy,
+                base_ratio,
+                ratio,
+                get_spec().speculative_num_draft_tokens,
+            )
+        return ratio
+
     def _apply_token_constraints(self, token_capacity: int) -> int:
         """Apply external constraints to token capacity: user cap, PP sync.
 
@@ -3021,13 +3043,12 @@ class KVCacheConfigurator:
             assert stage_per_req > 0
             per_req = stage_per_req
 
+            memory_ratio = get_schedule().mamba_full_memory_ratio
+            if reserves_spec_state:
+                memory_ratio = self._spec_state_memory_ratio(memory_ratio)
             # Solve jointly for max_mamba_cache_size (K), including the pool's
             # +1 padding slot on both buffers (see memory_pool.py).
-            mamba_budget = (
-                total_rest_memory
-                * get_schedule().mamba_full_memory_ratio
-                / (1 + get_schedule().mamba_full_memory_ratio)
-            )
+            mamba_budget = total_rest_memory * memory_ratio / (1 + memory_ratio)
             mamba_budget_bytes = mamba_budget * (1 << 30)
 
             if reserves_spec_state:

@@ -25,6 +25,9 @@ from sglang.srt.managers.scheduler_components.spec_policy.ledger import (  # noq
     MemoryLedger,
     _unique_param_bytes,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.memory_split import (  # noqa: E402
+    spec_state_memory_ratio,
+)
 from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noqa: E402
     CompositePolicy,
     LoadAwareVerifyPolicy,
@@ -535,6 +538,30 @@ class TestMemoryLedger(CustomTestCase):
             draft_weights_bytes=2 << 30,
         )
         self.assertEqual(ledger.tokens_for_bytes(ledger.draft_weights_bytes), 12787)
+
+
+class TestSpecStateMemoryRatio(CustomTestCase):
+    def test_memory_policies_count_each_verify_state(self):
+        # Qwen3.5-4B DFlash b16 (extra_buffer + overlap: 5 slots per request): the
+        # 0.9 * 21 / 5 split measured as the rule rows of policy round 4.
+        for policy_name in ("memory", "conditional"):
+            ratio = spec_state_memory_ratio(
+                policy_name=policy_name,
+                base_ratio=0.9,
+                slots_per_req=5,
+                num_draft_tokens=16,
+            )
+            self.assertAlmostEqual(ratio, 3.78)
+
+    def test_other_policies_keep_the_configured_ratio(self):
+        for policy_name in ("none", "observe", "width", "priority", "regime"):
+            ratio = spec_state_memory_ratio(
+                policy_name=policy_name,
+                base_ratio=0.9,
+                slots_per_req=5,
+                num_draft_tokens=16,
+            )
+            self.assertEqual(ratio, 0.9)
 
 
 def _headroom_obs(free_bytes, capacity=60000):
