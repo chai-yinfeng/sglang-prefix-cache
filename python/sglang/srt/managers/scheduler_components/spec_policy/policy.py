@@ -54,6 +54,14 @@ _REGIME_MAX_PAUSE_ACCEPT_LENGTH = 1.8
 # Arbitrary; the verify widths the width policy moves between, widest first. Width 1
 # verifies only the bonus token (drafting paused).
 _WIDTH_LADDER = (16, 8, 6, 4, 3, 2, 1)
+# Measured: DFlash decode steps on Qwen3-8B / RTX 5090 cost within 10% of each other
+# from 8 to 64 verify tokens (c1-c16), so a window narrower than this many tokens per
+# step saves little time and only loses acceptance; it is never chosen.
+_WIDTH_MIN_VERIFY_TOKENS = 64
+# Measured on the same setup: past this many verify tokens a step is compute-bound
+# (c16: 128 -> 256 tokens cost +47%), so a wider window is never chosen and a load
+# jump lands on the widest rung under it before the climb refines.
+_WIDTH_MAX_VERIFY_TOKENS = 256
 
 
 class SpecPolicy(Protocol):
@@ -324,13 +332,19 @@ class SpecWidthPolicy:
     (narrower when the load grew, wider when it fell), keeps climbing while each
     rung beats the last by a margin,
     tries the other direction once if the first rung loses, and otherwise stays.
-    Windows only count steps that actually ran at the width being measured.
+    Windows only count steps that actually ran at the width being measured. The
+    climb stays inside a band of verify tokens per step: below it a step costs no
+    less (at small batches that pins the full block, where noisy windows would
+    otherwise wander narrower), above it the step is compute-bound; a load change
+    that leaves the standing width outside the band jumps to the band's edge first.
     """
 
     def __init__(self, *, max_width: int) -> None:
         self._ladder = (max_width, *(w for w in _WIDTH_LADDER if w < max_width))
         self._index = 0
         self._round: Optional[_ClimbRound] = None
+        # Ladder indices the current load allows, widest first.
+        self._band = (0, 0)
         self._decision_batch_size: Optional[float] = None
         self._steps_since_decision = 0
         self._exploit_steps = _REGIME_EXPLOIT_STEPS
@@ -374,6 +388,9 @@ class SpecWidthPolicy:
             self._exploit_steps = _REGIME_EXPLOIT_STEPS
         elif self._steps_since_decision < self._exploit_steps:
             return
+        self._band = self._band_for(batch_size)
+        if not self._in_ladder(self._index):
+            self._move(min(max(self._index, self._band[0]), self._band[1]))
         direction = -1 if previous is not None and batch_size < previous else 1
         if not self._in_ladder(self._index + direction):
             direction = -direction
@@ -417,7 +434,27 @@ class SpecWidthPolicy:
         self._decide_at(window.mean_batch_size)
 
     def _in_ladder(self, index: int) -> bool:
-        return 0 <= index < len(self._ladder)
+        return self._band[0] <= index <= self._band[1]
+
+    def _band_for(self, batch_size: float) -> tuple[int, int]:
+        last = len(self._ladder) - 1
+        widest = next(
+            (
+                i
+                for i, width in enumerate(self._ladder)
+                if width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
+            ),
+            last,
+        )
+        narrowest = max(
+            (
+                i
+                for i, width in enumerate(self._ladder)
+                if width * batch_size >= _WIDTH_MIN_VERIFY_TOKENS
+            ),
+            default=0,
+        )
+        return widest, max(widest, narrowest)
 
     def _move(self, index: int) -> None:
         self._index = index

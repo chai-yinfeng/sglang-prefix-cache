@@ -378,8 +378,7 @@ class TestSpecWidthPolicy(CustomTestCase):
 
         window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
         policy = SpecWidthPolicy(max_width=16)
-        # Memory-bound at four requests: every width costs about the same step, so
-        # the widest stays.
+        # Four requests: any narrower window stays below the verify-token floor.
         plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
         self.assertEqual(plan.verify_width, 16)
         # Compute-bound at 64: goodput peaks at width 2 (7.3 tokens/ms vs 6.4 at 1).
@@ -390,15 +389,34 @@ class TestSpecWidthPolicy(CustomTestCase):
             batch_size=64,
         )
         self.assertEqual(plan.verify_width, 2)
-        # The load falls back: the climb goes wide again, up to where one more rung
-        # gains less than the margin (width 8 commits 10 tokens per step, as 6 does).
+        # The load falls back: width 2 is below the floor again, so the full block
+        # returns without a probe.
         plan = _width_steps(
             policy,
             plan,
-            steps=mod._REGIME_MIN_DECISION_STEPS + 10 * window,
+            steps=mod._REGIME_MIN_DECISION_STEPS + 2 * window,
             batch_size=4,
         )
+        self.assertEqual(plan.verify_width, 16)
+        # Sixteen requests: the climb stops at width 6 (3.2 tokens/ms vs 3.1 at 4).
+        plan = _width_steps(
+            policy,
+            plan,
+            steps=mod._REGIME_MIN_DECISION_STEPS + 6 * window,
+            batch_size=16,
+        )
         self.assertEqual(plan.verify_width, 6)
+
+    def test_a_load_jump_lands_on_the_band_edge_before_climbing(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS
+        policy = SpecWidthPolicy(max_width=16)
+        # Whole windows at 4 requests (the width never moves, so none settles).
+        plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
+        # One window at 64 requests: 64 x 4 verify tokens is the band's wide edge.
+        plan = _width_steps(policy, plan, steps=window, batch_size=64)
+        self.assertEqual(plan.verify_width, 4)
 
     def test_steps_at_another_width_do_not_count(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
@@ -428,12 +446,15 @@ class TestSpecWidthPolicy(CustomTestCase):
         widths, plan = [], SpecPolicyPlan()
         for _ in range(16 * mod._REGIME_EXPLOIT_STEPS // mod._REGIME_WINDOW_STEPS):
             plan = _width_steps(
-                policy, plan, steps=mod._REGIME_WINDOW_STEPS, batch_size=1
+                policy, plan, steps=mod._REGIME_WINDOW_STEPS, batch_size=16
             )
             widths.append(plan.verify_width)
-        probes = sum(1 for a, b in zip(widths, widths[1:]) if a == 16 and b != 16)
-        # Without the backoff a probe would fire every 1024 steps (16 of them).
-        self.assertLessEqual(probes, 6)
+        # Width 6 stands between rounds (the run may end inside one).
+        self.assertEqual(max(set(widths), key=widths.count), 6)
+        probes = sum(1 for a, b in zip(widths, widths[1:]) if a == 6 and b != 6)
+        # Every round from width 6 loses; without the backoff one would start every
+        # 1024 steps (about 15 of them).
+        self.assertLessEqual(probes, 5)
 
     def test_width_reaches_the_worker_once_per_change(self):
         worker = Mock()
