@@ -1,5 +1,7 @@
 # Policy 层 P2：显存划分（2026-10-27）
 
+> 更正（P3，`../policy-p3-v0.5.22/FINDINGS.md`）：capture 后定池大小对 plain 同样有效，plain 的 KV 涨到 90.2K。两边都打开后，DSpark 在 W2 并发 64 下仍是 plain 的 0.70 倍。下文的 1.08 倍是与默认配置的 plain 比较的结果；这个开关回收的是两边共有的余量，不是推测本身的显存成本。
+
 问题：8B 上推测解码让 KV 容量少了 26–35%，W2 高负载下只有 plain 的 0.5–0.7 倍（见 `../phase1-followups-v0.5.22/FINDINGS.md`）。这部分显存能不能在不改模型的前提下要回来？
 
 - 环境：Qwen3-8B BF16，RTX 5090，FA4 attention，开发分支 `lvelf/policy-layer`；
