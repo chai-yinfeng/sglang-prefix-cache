@@ -12,7 +12,7 @@
 | w2 | Qwen3.5-4B hybrid：DFlash 宽度同时决定 verify 中间状态的显存 | 见下文 |
 | 不做 | DSpark 上找低接受率的真实负载 | ShareGPT 里只有 27 条中日韩对话，凑不够并发 64；temperature 1.0 时 DSpark 接受长度仍有 2.36（第三轮），暂停不会赢 |
 
-- 环境：Qwen3-8B BF16，RTX 5090，flashinfer（DFlash 默认），CUDA graph 和 overlap 开启，capture 后定池大小（`SGLANG_ENABLE_POST_CAPTURE_KV_SIZING=1`），page 1；DFlash 是 `z-lab/Qwen3-8B-DFlash-b16`。单次运行。
+- 环境：Qwen3-8B BF16，RTX 5090，flashinfer（DFlash 默认），CUDA graph 和 overlap 开启，capture 后定池大小（`SGLANG_ENABLE_POST_CAPTURE_KV_SIZING=1`），page 1；DFlash 是 `z-lab/Qwen3-8B-DFlash-b16`。w4 的三组时变测试各重复了三次（`w4-repeats.csv`），其余是单次运行。
 - 原始数据：`work_dirs/stress-qwen3-8b/runs/r4-*`。
 
 ## w1：DFlash 的最优 verify 宽度随负载和负载类型变
@@ -143,7 +143,7 @@ DFlash 每步 draft 一个固定 16 个位置的块，target 全部 verify。`--
 
 ### 局限
 
-- 都是单次运行。同一配置同一阶段重复时差 2–3%（例如 b16 校对 c4 两个阶段 2308 / 2246）。policy 的优势在混合负载上（12%）明显大于噪声，在自然对话上（5%）接近噪声的两倍。
+- 重复误差：policy 和最好的静态宽度在三组测试上各跑三次（同一批请求，`w4-repeats.csv`），同一配置三次总耗时最多差 0.65 s（< 0.5%）。自然对话 162.8 vs 171.4 s（−5.0%）、混合 131.9 vs 149.7 s（−11.9%）都远大于这个误差；校对 85.3 vs 84.8 s，policy 三次都慢约 0.5 s（+0.6%），是试探宽度的代价。同一次运行里同样负载的两个阶段差 2–3%（例如 b16 校对 c4 的 2308 / 2246），那是两个阶段的请求不同。
 - 中等负载（c16）窄宽度走 eager，比同宽度的静态 graph 慢 9–15%。给每个窄宽度单独 capture target verify graph 可以补回来（EAGLE 的 adaptive 有现成做法：每档一个 attention backend + graph runner），但要处理和 breakable prefill graph 共用 attention backend 的问题，没有做。
 - 宽度对一个 batch 里的所有请求一样。接受率差别大的请求混在一起时，按请求分配宽度（DSpark 规划器那样的 ragged verify）会更好；DFlash 要先移植 ragged verify。
 - 两个 verify token 界（64 / 256）是在 Qwen3-8B / RTX 5090 / flashinfer 上测的，换模型或 GPU 要重测。
