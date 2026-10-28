@@ -257,6 +257,7 @@ class Spec(msgspec.Struct):
             "memory",
             "regime",
             "conditional",
+            "width",
         ],
         "Scheduler-side policy layer that reads speculative-decoding and memory-pool "
         "signals each step and adjusts speculation. 'none' disables it; 'observe' "
@@ -269,7 +270,9 @@ class Spec(msgspec.Struct):
         "KV pool into device memory that stays free under load (post-capture KV "
         "sizing, paged MHA pools); 'regime' (DSpark compact ragged verify) pauses "
         "drafting while measured decode goodput is higher without it; 'conditional' "
-        "combines 'regime', 'priority' and 'memory'.",
+        "combines 'regime', 'priority' and 'memory'; 'width' (DFlash, greedy draft "
+        "head) moves the per-step verify window between 1 and the block size to "
+        "whichever measured decode goodput favors.",
     ] = "none"
     speculative_policy_trace_path: A[
         Optional[str],

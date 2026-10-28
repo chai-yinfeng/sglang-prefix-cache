@@ -63,9 +63,15 @@ class SpecPolicyController:
                 f"--speculative-policy {policy_name} pauses drafting, which needs DSpark "
                 "with compact ragged verify and a verify budget planner."
             )
+        max_verify_width = None
+        if policy_name == "width":
+            max_verify_width = _max_verify_width(draft_worker)
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
         self.policy = build_spec_policy(
-            name=policy_name, sps_table_path=sps_table_path, ledger=ledger
+            name=policy_name,
+            sps_table_path=sps_table_path,
+            ledger=ledger,
+            max_verify_width=max_verify_width,
         )
         self.actuator = SpecPolicyActuator(
             draft_worker=draft_worker, grow_kv_pool=grow_kv_pool
@@ -132,6 +138,19 @@ def _supports_spec_pause(draft_worker) -> bool:
     )
 
     return isinstance(draft_worker, DSparkWorkerV2) and draft_worker.supports_spec_pause
+
+
+def _max_verify_width(draft_worker) -> int:
+    from sglang.srt.speculative.dflash_worker_v2 import DFlashWorkerV2
+
+    if not isinstance(draft_worker, DFlashWorkerV2) or not (
+        draft_worker.supports_verify_width
+    ):
+        raise ValueError(
+            "--speculative-policy width needs DFlash with the greedy draft head and "
+            "no compact draft cache or Mamba verify state."
+        )
+    return int(draft_worker.block_size)
 
 
 def _free_gpu_bytes() -> Optional[int]:

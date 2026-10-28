@@ -31,6 +31,7 @@ from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noq
     MemoryHeadroomPolicy,
     PriorityWeightPolicy,
     SpecRegimePolicy,
+    SpecWidthPolicy,
     knee_tokens_from_sps,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (  # noqa: E402
@@ -338,6 +339,111 @@ class TestSpecRegimePolicy(CustomTestCase):
         self.assertFalse(plan.spec_paused)
 
 
+def _width_accept_length(width):
+    # Each further position survives with probability 0.6.
+    return sum(0.6**i for i in range(width))
+
+
+def _width_step_ms(width, batch_size):
+    # Verify and draft are each memory-bound until their token count makes them
+    # compute-bound; width 1 skips the draft.
+    tokens = batch_size * width
+    return max(10.0, 0.09 * tokens) + (max(1.0, 0.02 * tokens) if width > 1 else 0.0)
+
+
+def _width_steps(policy, plan, *, steps, batch_size):
+    """Drive the width policy against an engine that runs each step at the width the
+    previous decision set, as the overlap scheduler does."""
+    width = plan.verify_width or policy.width
+    for _ in range(steps):
+        observation = Observation(
+            step=0,
+            forward_mode="DECODE",
+            batch_size=batch_size,
+            num_running=batch_size,
+            num_queued=0,
+            kv=PoolUsage(used=0, evictable=0, available=0),
+            step_ms=_width_step_ms(width, batch_size),
+            num_accept_tokens=round(batch_size * _width_accept_length(width)),
+            num_verify_tokens_per_req=width,
+        )
+        plan = policy.decide(observation=observation, current=plan)
+        width = plan.verify_width
+    return plan
+
+
+class TestSpecWidthPolicy(CustomTestCase):
+    def test_climbs_to_the_best_width_for_each_load(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
+        policy = SpecWidthPolicy(max_width=16)
+        # Memory-bound at four requests: every width costs about the same step, so
+        # the widest stays.
+        plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
+        self.assertEqual(plan.verify_width, 16)
+        # Compute-bound at 64: goodput peaks at width 2 (7.3 tokens/ms vs 6.4 at 1).
+        plan = _width_steps(
+            policy,
+            plan,
+            steps=mod._REGIME_MIN_DECISION_STEPS + 10 * window,
+            batch_size=64,
+        )
+        self.assertEqual(plan.verify_width, 2)
+        # The load falls back: the climb goes wide again, up to where one more rung
+        # gains less than the margin (width 8 commits 10 tokens per step, as 6 does).
+        plan = _width_steps(
+            policy,
+            plan,
+            steps=mod._REGIME_MIN_DECISION_STEPS + 10 * window,
+            batch_size=4,
+        )
+        self.assertEqual(plan.verify_width, 6)
+
+    def test_steps_at_another_width_do_not_count(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = SpecWidthPolicy(max_width=16)
+        observation = Observation(
+            step=0,
+            forward_mode="DECODE",
+            batch_size=64,
+            num_running=64,
+            num_queued=0,
+            kv=PoolUsage(used=0, evictable=0, available=0),
+            step_ms=1.0,
+            num_accept_tokens=64,
+            num_verify_tokens_per_req=4,
+        )
+        plan = SpecPolicyPlan()
+        for _ in range(4 * mod._REGIME_WINDOW_STEPS):
+            plan = policy.decide(observation=observation, current=plan)
+        # No window ever filled, so no round started from the standing width.
+        self.assertEqual(plan.verify_width, 16)
+
+    def test_losing_rounds_back_off(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = SpecWidthPolicy(max_width=16)
+        widths, plan = [], SpecPolicyPlan()
+        for _ in range(16 * mod._REGIME_EXPLOIT_STEPS // mod._REGIME_WINDOW_STEPS):
+            plan = _width_steps(
+                policy, plan, steps=mod._REGIME_WINDOW_STEPS, batch_size=1
+            )
+            widths.append(plan.verify_width)
+        probes = sum(1 for a, b in zip(widths, widths[1:]) if a == 16 and b != 16)
+        # Without the backoff a probe would fire every 1024 steps (16 of them).
+        self.assertLessEqual(probes, 6)
+
+    def test_width_reaches_the_worker_once_per_change(self):
+        worker = Mock()
+        actuator = SpecPolicyActuator(draft_worker=worker)
+        narrow = SpecPolicyPlan(verify_width=4)
+        actuator.apply(plan=narrow, current=SpecPolicyPlan(), reqs=[])
+        actuator.apply(plan=narrow, current=narrow, reqs=[])
+        worker.set_dflash_verify_width.assert_called_once_with(4)
+
+
 class TestMemoryLedger(CustomTestCase):
     def test_shared_draft_storage_is_counted_once(self):
         target = torch.nn.Linear(4, 4, bias=False)
@@ -474,6 +580,16 @@ class TestSpecPolicyController(CustomTestCase):
                     trace_path=None,
                     is_trace_writer=False,
                 )
+
+    def test_width_policy_rejects_a_worker_without_a_width_knob(self):
+        with self.assertRaises(ValueError):
+            SpecPolicyController(
+                policy_name="width",
+                sps_table_path=None,
+                draft_worker=Mock(),
+                trace_path=None,
+                is_trace_writer=False,
+            )
 
     def test_non_writer_rank_skips_trace(self):
         with tempfile.TemporaryDirectory() as tmp:

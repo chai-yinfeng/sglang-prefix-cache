@@ -51,6 +51,9 @@ _REGIME_LOAD_SHIFT = 0.25
 # root-only one (W2, w1-natural), so pausing cannot win while each request commits
 # more tokens per step than this; above it the pause is not even probed.
 _REGIME_MAX_PAUSE_ACCEPT_LENGTH = 1.8
+# Arbitrary; the verify widths the width policy moves between, widest first. Width 1
+# verifies only the bonus token (drafting paused).
+_WIDTH_LADDER = (16, 8, 6, 4, 3, 2, 1)
 
 
 class SpecPolicy(Protocol):
@@ -300,6 +303,131 @@ class SpecRegimePolicy:
         self._steps_since_decision = 0
 
 
+class _ClimbRound(msgspec.Struct):
+    """One search from the standing width: step one rung at a time while it pays."""
+
+    start_index: int
+    direction: int
+    # None until a window at the standing width is measured; the window that
+    # started the round may straddle the load change that triggered it.
+    reference_tokens_per_sec: Optional[float] = None
+    flipped: bool = False
+
+
+class SpecWidthPolicy:
+    """Pick the verify width by measured decode goodput.
+
+    A wider window commits more tokens per step but costs more verify compute, and
+    which side wins moves with the batch size and the workload's acceptance. The
+    policy hill-climbs a ladder of widths: when the standing choice is old or the
+    batch size has moved, it re-measures the standing width, then the next rung
+    (narrower when the load grew, wider when it fell), keeps climbing while each
+    rung beats the last by a margin,
+    tries the other direction once if the first rung loses, and otherwise stays.
+    Windows only count steps that actually ran at the width being measured.
+    """
+
+    def __init__(self, *, max_width: int) -> None:
+        self._ladder = (max_width, *(w for w in _WIDTH_LADDER if w < max_width))
+        self._index = 0
+        self._round: Optional[_ClimbRound] = None
+        self._decision_batch_size: Optional[float] = None
+        self._steps_since_decision = 0
+        self._exploit_steps = _REGIME_EXPLOIT_STEPS
+        self._window = _GoodputWindow(settle_steps=0)
+
+    @property
+    def width(self) -> int:
+        return self._ladder[self._index]
+
+    def decide(
+        self, *, observation: Observation, current: SpecPolicyPlan
+    ) -> SpecPolicyPlan:
+        if (
+            observation.step_ms is not None
+            and observation.num_accept_tokens is not None
+            and observation.num_verify_tokens_per_req == self.width
+        ):
+            self._window.add(
+                num_accept_tokens=observation.num_accept_tokens,
+                step_ms=observation.step_ms,
+                batch_size=observation.batch_size,
+            )
+            if self._window.steps >= _REGIME_WINDOW_STEPS:
+                window = self._window
+                self._window = _GoodputWindow(settle_steps=0)
+                if self._round is not None:
+                    self._continue_round(window)
+                else:
+                    self._steps_since_decision += window.steps
+                    self._maybe_start_round(window)
+        return msgspec.structs.replace(current, verify_width=self.width)
+
+    def _maybe_start_round(self, window: _GoodputWindow) -> None:
+        batch_size = window.mean_batch_size
+        previous = self._decision_batch_size
+        load_shifted = previous is None or (
+            self._steps_since_decision >= _REGIME_MIN_DECISION_STEPS
+            and abs(batch_size - previous) > _REGIME_LOAD_SHIFT * max(previous, 1.0)
+        )
+        if load_shifted:
+            self._exploit_steps = _REGIME_EXPLOIT_STEPS
+        elif self._steps_since_decision < self._exploit_steps:
+            return
+        direction = -1 if previous is not None and batch_size < previous else 1
+        if not self._in_ladder(self._index + direction):
+            direction = -direction
+        if not self._in_ladder(self._index + direction):
+            self._decide_at(batch_size)
+            return
+        self._round = _ClimbRound(start_index=self._index, direction=direction)
+
+    def _continue_round(self, window: _GoodputWindow) -> None:
+        climb = self._round
+        if climb.reference_tokens_per_sec is None:
+            climb.reference_tokens_per_sec = window.tokens_per_sec
+            self._move(self._index + climb.direction)
+            return
+        if window.tokens_per_sec > climb.reference_tokens_per_sec * (
+            1 + _REGIME_SWITCH_MARGIN
+        ):
+            climb.reference_tokens_per_sec = window.tokens_per_sec
+            if self._in_ladder(self._index + climb.direction):
+                self._move(self._index + climb.direction)
+                return
+            self._end_round(window)
+            return
+        self._move(self._index - climb.direction)
+        if self._index == climb.start_index and not climb.flipped:
+            climb.direction = -climb.direction
+            climb.flipped = True
+            if self._in_ladder(self._index + climb.direction):
+                self._move(self._index + climb.direction)
+                return
+        self._end_round(window)
+
+    def _end_round(self, window: _GoodputWindow) -> None:
+        moved = self._index != self._round.start_index
+        self._round = None
+        self._exploit_steps = (
+            _REGIME_EXPLOIT_STEPS
+            if moved
+            else min(2 * self._exploit_steps, _REGIME_MAX_EXPLOIT_STEPS)
+        )
+        self._decide_at(window.mean_batch_size)
+
+    def _in_ladder(self, index: int) -> bool:
+        return 0 <= index < len(self._ladder)
+
+    def _move(self, index: int) -> None:
+        self._index = index
+        self._window = _GoodputWindow(settle_steps=_REGIME_SETTLE_STEPS)
+
+    def _decide_at(self, batch_size: float) -> None:
+        self._decision_batch_size = batch_size
+        self._steps_since_decision = 0
+
+
 class CompositePolicy:
     """Each member owns its own plan fields; they are applied in order."""
 
@@ -316,7 +444,11 @@ class CompositePolicy:
 
 
 def build_spec_policy(
-    *, name: str, sps_table_path: Optional[str], ledger: Optional[MemoryLedger] = None
+    *,
+    name: str,
+    sps_table_path: Optional[str],
+    ledger: Optional[MemoryLedger] = None,
+    max_verify_width: Optional[int] = None,
 ) -> SpecPolicy:
     if name == "observe":
         return ObservePolicy()
@@ -326,6 +458,8 @@ def build_spec_policy(
         return MemoryHeadroomPolicy(ledger=ledger)
     if name == "regime":
         return SpecRegimePolicy()
+    if name == "width":
+        return SpecWidthPolicy(max_width=max_verify_width)
     if name == "conditional":
         return CompositePolicy(
             [

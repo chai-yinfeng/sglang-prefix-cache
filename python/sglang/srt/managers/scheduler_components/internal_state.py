@@ -184,6 +184,9 @@ class SchedulerInternalStateController:
             "dspark_clear_info_records": _UpdateHandler(
                 self._validate_dspark_clear_records, self._apply_dspark_clear_records
             ),
+            "dflash_verify_width": _UpdateHandler(
+                self._validate_dflash_verify_width, self._apply_dflash_verify_width
+            ),
         }
 
     def _validate_pp_micro_batch_size(self, key: str, value: Any) -> None:
@@ -246,6 +249,23 @@ class SchedulerInternalStateController:
     def _apply_dspark_clear_records(self, key: str, value: Any) -> None:
         if value:
             self.scheduler.draft_worker.clear_info_records()
+
+    def _validate_dflash_verify_width(self, key: str, value: Any) -> None:
+        from sglang.srt.speculative.dflash_worker_v2 import DFlashWorkerV2
+
+        worker = self.scheduler.draft_worker
+        if not isinstance(worker, DFlashWorkerV2) or not worker.supports_verify_width:
+            raise UpdateRejected(
+                f"{key} needs a DFlash worker with the greedy draft head and no "
+                "compact draft cache or Mamba verify state."
+            )
+        if not isinstance(value, int) or not 1 <= value <= worker.block_size:
+            raise UpdateRejected(
+                f"{key} must be an int in [1, {worker.block_size}], got {value!r}."
+            )
+
+    def _apply_dflash_verify_width(self, key: str, value: Any) -> None:
+        self.scheduler.draft_worker.set_dflash_verify_width(int(value))
 
     def _require_dspark_worker(self, key: str, command: str) -> None:
         if not self.scheduler.spec_algorithm.is_dspark() or not hasattr(

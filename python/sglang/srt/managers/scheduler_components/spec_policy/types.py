@@ -49,3 +49,5 @@ class SpecPolicyPlan(msgspec.Struct, frozen=True, omit_defaults=True):
     target_kv_tokens: Optional[int] = None
     # Skip the draft and verify only each request's root; None = never touched.
     spec_paused: Optional[bool] = None
+    # DFlash verify window per request (1..block size); None = the full block.
+    verify_width: Optional[int] = None
