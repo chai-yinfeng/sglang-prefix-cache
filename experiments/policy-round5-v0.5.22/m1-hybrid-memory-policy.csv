@@ -1,0 +1,7 @@
+algo,variant,workload,concurrency,output_tok_s,median_tpot_ms,p99_tpot_ms,median_ttft_ms,accept_length,max_concurrent_requests,running_cap,ratio,kv_tokens
+h-dflash-b16-mem,,w1-natural,16,1279.8,4.43,12.12,1283.1,4.006,26,8,3.78,55386
+h-dflash-b16-mem,,w1-natural,64,1363.5,4.73,13.14,8197.6,3.984,75,8,3.78,55386
+h-dflash-b4-mem,,w1-natural,16,1790.4,5.32,13.56,203.0,2.884,30,16,1.62,87725
+h-dflash-b4-mem,,w1-natural,64,2244.6,5.45,12.43,4364.2,2.877,85,16,1.62,87725
+h-mtp-mem,,w1-natural,16,1599.1,6.81,24.68,64.9,2.904,28,16,1.62,154442
+h-mtp-mem,,w1-natural,64,1997.9,6.64,10.37,4860.6,2.901,83,16,1.62,154442
