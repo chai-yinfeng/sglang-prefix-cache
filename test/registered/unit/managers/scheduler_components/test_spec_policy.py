@@ -419,6 +419,29 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(policy, plan, steps=window, batch_size=64)
         self.assertEqual(plan.verify_width, 4)
 
+    def test_a_wasteful_load_spike_jumps_on_its_first_step(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = SpecWidthPolicy(max_width=16)
+        plan = _width_steps(
+            policy, SpecPolicyPlan(), steps=8 * mod._REGIME_WINDOW_STEPS, batch_size=4
+        )
+        # 64 x 16 verify tokens overshoot the ceiling fourfold while the last window
+        # committed 2.5 of 16 positions: no window of slow steps first.
+        plan = _width_steps(policy, plan, steps=1, batch_size=64)
+        self.assertEqual(plan.verify_width, 4)
+        # The well-used edit-like window does not.
+        policy = SpecWidthPolicy(max_width=16)
+        plan = _width_steps(
+            policy,
+            SpecPolicyPlan(),
+            steps=8 * mod._REGIME_WINDOW_STEPS,
+            batch_size=4,
+            survival=0.97,
+        )
+        plan = _width_steps(policy, plan, steps=1, batch_size=64, survival=0.97)
+        self.assertEqual(plan.verify_width, 16)
+
     def test_a_well_used_window_climbs_instead_of_jumping(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 

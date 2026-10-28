@@ -340,8 +340,9 @@ class SpecWidthPolicy:
     tried (at small batches that pins the full block, where noisy windows would
     otherwise wander narrower); and a compute-bound step that commits only a small
     fraction of its window jumps straight to the widest rung under
-    _WIDTH_MAX_VERIFY_TOKENS. High-acceptance workloads keep wide windows, since
-    the climb itself may go back up.
+    _WIDTH_MAX_VERIFY_TOKENS -- on the first step of a load jump that overshoots it
+    twice, rather than after a window of slow steps. High-acceptance workloads keep
+    wide windows, since the climb itself may go back up.
     """
 
     def __init__(self, *, max_width: int) -> None:
@@ -354,6 +355,8 @@ class SpecWidthPolicy:
         self._steps_since_decision = 0
         self._exploit_steps = _REGIME_EXPLOIT_STEPS
         self._window = _GoodputWindow(settle_steps=0)
+        # (width, accept length) of the last full window.
+        self._last_window: Optional[tuple[int, float]] = None
 
     @property
     def width(self) -> int:
@@ -362,6 +365,10 @@ class SpecWidthPolicy:
     def decide(
         self, *, observation: Observation, current: SpecPolicyPlan
     ) -> SpecPolicyPlan:
+        if observation.forward_mode == "DECODE" and self._wastes_a_load_jump(
+            observation.batch_size
+        ):
+            self._jump_and_climb(observation.batch_size)
         if (
             observation.step_ms is not None
             and observation.num_accept_tokens is not None
@@ -375,6 +382,7 @@ class SpecWidthPolicy:
             if self._window.steps >= _REGIME_WINDOW_STEPS:
                 window = self._window
                 self._window = _GoodputWindow(settle_steps=0)
+                self._last_window = (self.width, window.accept_length)
                 self._floor_index = self._narrowest_index(window.mean_batch_size)
                 if self._index > self._floor_index:
                     # The load fell under the floor: the floor dominates, even mid-round.
@@ -414,7 +422,13 @@ class SpecWidthPolicy:
         climb = self._round
         if climb.reference_tokens_per_sec is None:
             climb.reference_tokens_per_sec = window.tokens_per_sec
-            self._move(self._index + climb.direction)
+            if not self._in_ladder(self._index + climb.direction):
+                climb.direction = -climb.direction
+                climb.flipped = True
+            if self._in_ladder(self._index + climb.direction):
+                self._move(self._index + climb.direction)
+            else:
+                self._end_round(window)
             return
         if window.tokens_per_sec > climb.reference_tokens_per_sec * (
             1 + _REGIME_SWITCH_MARGIN
@@ -460,12 +474,31 @@ class SpecWidthPolicy:
     def _jump_index(self, window: _GoodputWindow) -> int:
         """Where a wasteful compute-bound window should restart its climb; the
         standing index when it is neither."""
-        batch_size = window.mean_batch_size
         if (
-            self.width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
+            self.width * window.mean_batch_size <= _WIDTH_MAX_VERIFY_TOKENS
             or window.accept_length >= _WIDTH_MIN_UTILIZATION * self.width
         ):
             return self._index
+        return self._ceiling_index(window.mean_batch_size)
+
+    def _wastes_a_load_jump(self, batch_size: int) -> bool:
+        last = self._last_window
+        return (
+            self._round is None
+            and last is not None
+            and last[0] == self.width
+            and self.width * batch_size > 2 * _WIDTH_MAX_VERIFY_TOKENS
+            and last[1] < _WIDTH_MIN_UTILIZATION * self.width
+        )
+
+    def _jump_and_climb(self, batch_size: int) -> None:
+        self._floor_index = self._narrowest_index(batch_size)
+        index = self._ceiling_index(batch_size)
+        self._move(index)
+        self._decide_at(batch_size)
+        self._round = _ClimbRound(start_index=index, direction=1)
+
+    def _ceiling_index(self, batch_size: float) -> int:
         return next(
             (
                 i
