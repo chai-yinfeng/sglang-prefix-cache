@@ -407,6 +407,19 @@ def _handle_dflash(server_args: ServerArgs) -> None:
             speculative_num_draft_tokens=inferred_block_size,
         )
 
+    if cfg.speculative_dflash_verify_graph_widths:
+        block_size = int(cfg.speculative_num_draft_tokens)
+        bad = [
+            w
+            for w in cfg.speculative_dflash_verify_graph_widths
+            if not 1 <= w < block_size
+        ]
+        if bad:
+            raise ValueError(
+                "--speculative-dflash-verify-graph-widths must lie in "
+                f"[1, block_size={block_size}), got {bad}."
+            )
+
     if cfg.speculative_draft_window_size is not None:
         draft_tokens = int(cfg.speculative_num_draft_tokens)
         if cfg.speculative_draft_window_size < draft_tokens:

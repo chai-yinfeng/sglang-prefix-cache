@@ -65,6 +65,9 @@ from sglang.srt.speculative.dflash_utils import (
     is_dflash_sampling_verify_available,
     parse_dflash_draft_config,
 )
+from sglang.srt.speculative.dflash_verify_width_graphs import (
+    build_verify_width_graph_runner,
+)
 from sglang.srt.speculative.domino_utils import (
     domino_greedy_rollout,
     validate_domino_runtime,
@@ -571,8 +574,8 @@ class DFlashWorkerV2(BaseSpecWorker):
         self._draft_block_spec_info = make_draft_block_spec_info(
             draft_token_num=int(self.block_size), device=self.device
         )
-        # Verify window each decode step runs (<= block_size); a narrower one
-        # misses the captured graphs and runs eager.
+        # Verify window each decode step runs (<= block_size); a narrower one runs
+        # eager unless --speculative-dflash-verify-graph-widths captured it.
         self._verify_width = int(self.block_size)
         self._draft_block_spec_infos = {self._verify_width: self._draft_block_spec_info}
         self._draft_greedy_gathered_max_buf: Optional[torch.Tensor] = None
@@ -743,6 +746,31 @@ class DFlashWorkerV2(BaseSpecWorker):
             self._draft_worker.init_cuda_graphs(
                 capture_decode_cuda_graph=capture_decode_cuda_graph
             )
+        self._maybe_capture_verify_width_graphs()
+
+    def _maybe_capture_verify_width_graphs(self) -> None:
+        widths = get_spec().speculative_dflash_verify_graph_widths
+        if not widths:
+            return
+        if not self.supports_verify_width:
+            logger.warning(
+                "Ignore --speculative-dflash-verify-graph-widths: this DFLASH "
+                "configuration keeps the verify width at the block size."
+            )
+            return
+        runner = build_verify_width_graph_runner(
+            model_runner=self.model_runner,
+            widths=widths,
+            device=self.device,
+            gpu_id=self.gpu_id,
+        )
+        if runner is None:
+            logger.warning(
+                "Ignore --speculative-dflash-verify-graph-widths: the target has "
+                "no decode CUDA graphs."
+            )
+            return
+        self.model_runner.decode_cuda_graph_runner = runner
 
     def _prewarm_batch_size(self, block_size: int) -> int:
         """Largest batch the non-greedy verify path can see in one step."""

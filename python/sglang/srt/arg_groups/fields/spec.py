@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from typing import (
+    List,
     Literal,
     Optional,
 )
@@ -70,6 +71,12 @@ class Spec(msgspec.Struct):
     speculative_dflash_block_size: A[
         Optional[int],
         "DFLASH only. Block size (verify window length). Alias of --speculative-num-draft-tokens for DFLASH.",
+    ] = None
+    speculative_dflash_verify_graph_widths: A[
+        Optional[List[int]],
+        "DFLASH only. Verify widths below the block size to capture target-verify CUDA "
+        "graphs for, so a runtime verify width (--speculative-policy width) replays a "
+        "graph instead of running eager. Each width costs one extra set of graphs.",
     ] = None
     speculative_domino_candidate_pool_size: A[
         int,
