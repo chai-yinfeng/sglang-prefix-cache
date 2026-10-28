@@ -41,12 +41,13 @@ class SpecPolicyController:
         self,
         *,
         policy_name: str,
+        sps_table_path: Optional[str],
         draft_worker,
         trace_path: Optional[str],
         is_trace_writer: bool,
     ) -> None:
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
-        self.policy = build_spec_policy(policy_name)
+        self.policy = build_spec_policy(name=policy_name, sps_table_path=sps_table_path)
         self.actuator = SpecPolicyActuator(draft_worker=draft_worker)
         self.plan = SpecPolicyPlan()
         self._trace: Optional[BinaryIO] = (

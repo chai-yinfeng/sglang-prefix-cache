@@ -2593,6 +2593,7 @@ class Scheduler(
         if get_spec().speculative_policy != "none":
             self.spec_policy = SpecPolicyController(
                 policy_name=get_spec().speculative_policy,
+                sps_table_path=get_spec().speculative_dspark_sps_table_path,
                 draft_worker=self.draft_worker,
                 trace_path=get_spec().speculative_policy_trace_path,
                 is_trace_writer=get_parallel().tp_rank == 0,

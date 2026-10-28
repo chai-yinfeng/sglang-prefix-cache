@@ -18,10 +18,16 @@ from sglang.srt.managers.scheduler_components.spec_policy.actuator import (  # n
 from sglang.srt.managers.scheduler_components.spec_policy.controller import (  # noqa: E402
     SpecPolicyController,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noqa: E402
+    LoadAwareVerifyPolicy,
+    knee_tokens_from_sps,
+)
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (  # noqa: E402
     SpecPolicySensor,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.types import (  # noqa: E402
+    Observation,
+    PoolUsage,
     SpecPolicyPlan,
 )
 from sglang.srt.model_executor.forward_batch_info import ForwardMode  # noqa: E402
@@ -110,6 +116,48 @@ class TestSpecPolicyActuator(CustomTestCase):
         worker.set_dspark_forced_budget_frac.assert_called_once_with(None)
 
 
+def _decode(batch_size: int, *, mode: str = "DECODE") -> Observation:
+    return Observation(
+        step=0,
+        forward_mode=mode,
+        batch_size=batch_size,
+        num_running=batch_size,
+        num_queued=0,
+        kv=PoolUsage(used=0, evictable=0, available=0),
+        num_verify_tokens_per_req=8,
+    )
+
+
+class TestLoadAwareVerifyPolicy(CustomTestCase):
+    def test_knee_is_last_probe_within_peak_fraction(self):
+        # Qwen3-8B / RTX 5090 / FA4 table: 192 tokens runs at 62% of peak, 256 at 48%.
+        knee = knee_tokens_from_sps(
+            batch_tokens=[8, 16, 32, 64, 128, 192, 256],
+            steps_per_sec=[71.9, 72.4, 71.4, 69.8, 58.9, 44.7, 34.8],
+        )
+        self.assertEqual(knee, 192)
+
+    def test_hysteresis_and_dwell(self):
+        policy = LoadAwareVerifyPolicy(knee_tokens=64)
+        plan = policy.decide(observation=_decode(4), current=SpecPolicyPlan())
+        self.assertEqual(plan, LoadAwareVerifyPolicy.FULL)
+        # Inside the band (64 < 80 tokens <= 96) nothing moves, however long it stays.
+        for _ in range(40):
+            plan = policy.decide(observation=_decode(10), current=plan)
+        self.assertEqual(plan, LoadAwareVerifyPolicy.FULL)
+        plan = policy.decide(observation=_decode(13), current=plan)
+        self.assertEqual(plan, LoadAwareVerifyPolicy.PLANNER)
+        # A dip right after a switch waits out the dwell; prefill steps do not count toward it.
+        for _ in range(30):
+            plan = policy.decide(observation=_decode(1, mode="EXTEND"), current=plan)
+        for _ in range(14):
+            plan = policy.decide(observation=_decode(2), current=plan)
+        self.assertEqual(plan, LoadAwareVerifyPolicy.PLANNER)
+        plan = policy.decide(observation=_decode(2), current=plan)
+        plan = policy.decide(observation=_decode(2), current=plan)
+        self.assertEqual(plan, LoadAwareVerifyPolicy.FULL)
+
+
 class TestSpecPolicyController(CustomTestCase):
     def test_observe_policy_traces_without_acting(self):
         worker = Mock()
@@ -117,6 +165,7 @@ class TestSpecPolicyController(CustomTestCase):
             trace = Path(tmp) / "trace.jsonl"
             controller = SpecPolicyController(
                 policy_name="observe",
+                sps_table_path=None,
                 draft_worker=worker,
                 trace_path=str(trace),
                 is_trace_writer=True,
@@ -143,6 +192,7 @@ class TestSpecPolicyController(CustomTestCase):
             trace = Path(tmp) / "trace.jsonl"
             SpecPolicyController(
                 policy_name="observe",
+                sps_table_path=None,
                 draft_worker=Mock(),
                 trace_path=str(trace),
                 is_trace_writer=False,

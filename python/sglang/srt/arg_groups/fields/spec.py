@@ -249,10 +249,13 @@ class Spec(msgspec.Struct):
         Optional[str], "Directory to write decoupled speculative decoding trace files."
     ] = None
     speculative_policy: A[
-        Literal["none", "observe"],
+        Literal["none", "observe", "load-aware"],
         "Scheduler-side policy layer that reads speculative-decoding and memory-pool "
         "signals each step and adjusts speculation. 'none' disables it; 'observe' "
-        "collects observations (see --speculative-policy-trace-path) without acting.",
+        "collects observations (see --speculative-policy-trace-path) without acting; "
+        "'load-aware' (DSpark compact ragged verify) verifies every drafted position "
+        "while the step is below the step-time knee of the SPS table and hands the "
+        "budget to the confidence planner past it.",
     ] = "none"
     speculative_policy_trace_path: A[
         Optional[str],
