@@ -59,9 +59,11 @@ _WIDTH_LADDER = (16, 8, 6, 4, 3, 2, 1)
 # step saves little time and only loses acceptance; it is never chosen.
 _WIDTH_MIN_VERIFY_TOKENS = 64
 # Measured on the same setup: past this many verify tokens a step is compute-bound
-# (c16: 128 -> 256 tokens cost +47%), so a wider window is never chosen and a load
-# jump lands on the widest rung under it before the climb refines.
+# (c16: 128 -> 256 tokens cost +47%), so every wasted verify position costs time.
 _WIDTH_MAX_VERIFY_TOKENS = 256
+# Arbitrary; a window that commits less than this fraction of its positions past
+# the compute-bound point jumps to the widest rung under it before climbing.
+_WIDTH_MIN_UTILIZATION = 0.25
 
 
 class SpecPolicy(Protocol):
@@ -332,19 +334,22 @@ class SpecWidthPolicy:
     (narrower when the load grew, wider when it fell), keeps climbing while each
     rung beats the last by a margin,
     tries the other direction once if the first rung loses, and otherwise stays.
-    Windows only count steps that actually ran at the width being measured. The
-    climb stays inside a band of verify tokens per step: below it a step costs no
-    less (at small batches that pins the full block, where noisy windows would
-    otherwise wander narrower), above it the step is compute-bound; a load change
-    that leaves the standing width outside the band jumps to the band's edge first.
+    Windows only count steps that actually ran at the width being measured. Two
+    verify-token bounds shortcut the climb: a width whose step would carry fewer
+    than _WIDTH_MIN_VERIFY_TOKENS costs no less than a wider one, so it is never
+    tried (at small batches that pins the full block, where noisy windows would
+    otherwise wander narrower); and a compute-bound step that commits only a small
+    fraction of its window jumps straight to the widest rung under
+    _WIDTH_MAX_VERIFY_TOKENS. High-acceptance workloads keep wide windows, since
+    the climb itself may go back up.
     """
 
     def __init__(self, *, max_width: int) -> None:
         self._ladder = (max_width, *(w for w in _WIDTH_LADDER if w < max_width))
         self._index = 0
         self._round: Optional[_ClimbRound] = None
-        # Ladder indices the current load allows, widest first.
-        self._band = (0, 0)
+        # Narrowest ladder index the current load allows.
+        self._floor_index = 0
         self._decision_batch_size: Optional[float] = None
         self._steps_since_decision = 0
         self._exploit_steps = _REGIME_EXPLOIT_STEPS
@@ -388,9 +393,10 @@ class SpecWidthPolicy:
             self._exploit_steps = _REGIME_EXPLOIT_STEPS
         elif self._steps_since_decision < self._exploit_steps:
             return
-        self._band = self._band_for(batch_size)
-        if not self._in_ladder(self._index):
-            self._move(min(max(self._index, self._band[0]), self._band[1]))
+        self._floor_index = self._narrowest_index(batch_size)
+        jump = min(self._jump_index(window), self._floor_index)
+        if jump != self._index:
+            self._move(jump)
         direction = -1 if previous is not None and batch_size < previous else 1
         if not self._in_ladder(self._index + direction):
             direction = -direction
@@ -434,19 +440,10 @@ class SpecWidthPolicy:
         self._decide_at(window.mean_batch_size)
 
     def _in_ladder(self, index: int) -> bool:
-        return self._band[0] <= index <= self._band[1]
+        return 0 <= index <= self._floor_index
 
-    def _band_for(self, batch_size: float) -> tuple[int, int]:
-        last = len(self._ladder) - 1
-        widest = next(
-            (
-                i
-                for i, width in enumerate(self._ladder)
-                if width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
-            ),
-            last,
-        )
-        narrowest = max(
+    def _narrowest_index(self, batch_size: float) -> int:
+        return max(
             (
                 i
                 for i, width in enumerate(self._ladder)
@@ -454,7 +451,24 @@ class SpecWidthPolicy:
             ),
             default=0,
         )
-        return widest, max(widest, narrowest)
+
+    def _jump_index(self, window: _GoodputWindow) -> int:
+        """Where a wasteful compute-bound window should restart its climb; the
+        standing index when it is neither."""
+        batch_size = window.mean_batch_size
+        if (
+            self.width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
+            or window.accept_length >= _WIDTH_MIN_UTILIZATION * self.width
+        ):
+            return self._index
+        return next(
+            (
+                i
+                for i, width in enumerate(self._ladder)
+                if width * batch_size <= _WIDTH_MAX_VERIFY_TOKENS
+            ),
+            len(self._ladder) - 1,
+        )
 
     def _move(self, index: int) -> None:
         self._index = index
