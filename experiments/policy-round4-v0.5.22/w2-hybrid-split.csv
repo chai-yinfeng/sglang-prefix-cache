@@ -1,0 +1,17 @@
+algo,variant,workload,concurrency,output_tok_s,median_tpot_ms,p99_tpot_ms,median_ttft_ms,accept_length,max_concurrent_requests
+h-dflash-b16-part,,w1-natural,16,1278.3,4.87,13.82,1076.6,4.01,25
+h-dflash-b16-part,,w1-natural,64,1420.5,5.12,14.48,7664.1,4.042,76
+h-dflash-b2-part,,w1-natural,16,1314.8,8.23,11.74,52.4,1.837,26
+h-dflash-b2-part,,w1-natural,64,2080.9,8.79,14.01,3872.0,1.831,79
+h-dflash-b4-part,,w1-natural,16,1757.6,5.96,10.85,57.5,2.882,28
+h-dflash-b4-part,,w1-natural,64,2345.2,6.47,15.56,3818.8,2.878,85
+h-dflash-b8-part,,w1-natural,16,1723.0,5.08,8.53,350.0,3.643,29
+h-dflash-b8-part,,w1-natural,64,2160.4,5.37,12.36,4677.3,3.68,83
+h-mtp-part,,w1-natural,16,1622.3,6.74,25.13,66.7,2.912,27
+h-mtp-part,,w1-natural,64,2330.4,8.67,15.56,3441.0,2.911,82
+h-plain-part,,w1-natural,16,1168.6,9.76,13.99,40.1,1.0,25
+h-plain-part,,w1-natural,64,2470.5,12.95,35.94,1763.4,1.0,85
+h-dflash-b16-rule,,w1-natural,16,1267.0,4.41,11.81,1280.1,4.006,26
+h-dflash-b16-rule,,w1-natural,64,1368.5,4.7,12.59,8167.2,3.984,75
+h-dflash-b4-rule,,w1-natural,16,1773.1,5.24,12.07,201.1,2.884,30
+h-dflash-b4-rule,,w1-natural,64,2248.4,5.47,12.34,4358.2,2.877,84
