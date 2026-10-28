@@ -431,6 +431,20 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(policy, plan, steps=window, batch_size=64, survival=0.97)
         self.assertEqual(plan.verify_width, 16)
 
+    def test_a_load_drop_mid_round_returns_to_the_floor(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
+        policy = SpecWidthPolicy(max_width=16)
+        plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
+        # Two windows at 64 requests: jumped to width 4 and climbing.
+        plan = _width_steps(policy, plan, steps=2 * window, batch_size=64)
+        self.assertIsNotNone(policy._round)
+        # Within two windows at four requests the full block is back.
+        plan = _width_steps(policy, plan, steps=2 * window, batch_size=4)
+        self.assertEqual(plan.verify_width, 16)
+        self.assertIsNone(policy._round)
+
     def test_steps_at_another_width_do_not_count(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 

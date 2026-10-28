@@ -375,7 +375,13 @@ class SpecWidthPolicy:
             if self._window.steps >= _REGIME_WINDOW_STEPS:
                 window = self._window
                 self._window = _GoodputWindow(settle_steps=0)
-                if self._round is not None:
+                self._floor_index = self._narrowest_index(window.mean_batch_size)
+                if self._index > self._floor_index:
+                    # The load fell under the floor: the floor dominates, even mid-round.
+                    self._round = None
+                    self._move(self._floor_index)
+                    self._decide_at(window.mean_batch_size)
+                elif self._round is not None:
                     self._continue_round(window)
                 else:
                     self._steps_since_decision += window.steps
@@ -393,7 +399,6 @@ class SpecWidthPolicy:
             self._exploit_steps = _REGIME_EXPLOIT_STEPS
         elif self._steps_since_decision < self._exploit_steps:
             return
-        self._floor_index = self._narrowest_index(batch_size)
         jump = min(self._jump_index(window), self._floor_index)
         if jump != self._index:
             self._move(jump)
