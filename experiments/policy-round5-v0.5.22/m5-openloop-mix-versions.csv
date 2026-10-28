@@ -1,0 +1,41 @@
+version,tag,algo,segment,dataset,rate,n,ttft_p50,ttft_p95,tpot_p50,tpot_p95,e2e_p50,e2e_p95,slo_attained,makespan_s
+static-b4,r5-openloop-mix,dflash-pcs-b4,1,mix,1.0,50,46.4,98.4,5.8,8.0,1386.1,5299.8,1.0,
+static-b4,r5-openloop-mix,dflash-pcs-b4,2,mix,7.0,413,54.6,137.0,7.1,12.2,1887.9,5866.5,1.0,
+static-b4,r5-openloop-mix,dflash-pcs-b4,3,mix,1.0,57,43.7,82.7,4.3,8.4,1507.0,4909.8,1.0,
+static-b4,r5-openloop-mix,dflash-pcs-b4,4,mix,7.0,459,58.3,135.3,7.5,13.9,2053.0,6718.8,1.0,
+static-b4,r5-openloop-mix,dflash-pcs-b4,all,,,979,55.3,132.9,6.9,13.0,1923.8,6300.6,1.0,243.12
+static-b3,r5-openloop-mix,dflash-pcs-b3,1,mix,1.0,50,47.0,101.3,6.5,8.5,1678.3,5406.4,1.0,
+static-b3,r5-openloop-mix,dflash-pcs-b3,2,mix,7.0,413,54.7,145.3,8.3,12.7,2297.9,6380.3,1.0,
+static-b3,r5-openloop-mix,dflash-pcs-b3,3,mix,1.0,57,47.5,110.3,5.8,8.8,1617.0,5075.4,1.0,
+static-b3,r5-openloop-mix,dflash-pcs-b3,4,mix,7.0,459,60.2,145.3,9.5,15.2,2614.4,7337.3,1.0,
+static-b3,r5-openloop-mix,dflash-pcs-b3,all,,,979,55.8,137.5,8.6,14.0,2355.3,6809.0,1.0,244.07
+plain,r5-openloop-mix,plain-pcs-default,1,mix,1.0,50,42.9,86.9,11.1,11.7,3342.8,8040.4,1.0,
+plain,r5-openloop-mix,plain-pcs-default,2,mix,7.0,413,46.0,121.9,15.1,16.3,4113.0,9084.4,1.0,
+plain,r5-openloop-mix,plain-pcs-default,3,mix,1.0,57,41.8,80.1,11.2,11.9,3078.6,7066.4,1.0,
+plain,r5-openloop-mix,plain-pcs-default,4,mix,7.0,459,48.5,114.3,16.4,18.7,4790.1,10160.7,1.0,
+plain,r5-openloop-mix,plain-pcs-default,all,,,979,46.6,113.3,15.5,17.7,4339.7,9118.6,1.0,248.12
+round4-policy,r5-openloop-mix,dflash-pcs-width,1,mix,1.0,50,45.5,89.4,4.6,7.7,646.4,4812.7,1.0,
+round4-policy,r5-openloop-mix,dflash-pcs-width,2,mix,7.0,413,71.3,168.4,8.2,30.1,2159.6,11380.3,0.949,
+round4-policy,r5-openloop-mix,dflash-pcs-width,3,mix,1.0,57,45.9,89.8,3.9,8.4,623.9,4190.1,1.0,
+round4-policy,r5-openloop-mix,dflash-pcs-width,4,mix,7.0,459,66.0,153.7,8.5,21.8,2037.7,8889.8,0.998,
+round4-policy,r5-openloop-mix,dflash-pcs-width,all,,,979,64.8,158.7,7.2,24.4,1962.4,9094.5,0.978,243.73
+final (c1879e9103 logic),r5-graph-openloop-mix,dflash-pcs-width-g,1,mix,1.0,50,47.6,102.1,4.5,7.7,643.6,4731.6,1.0,
+final (c1879e9103 logic),r5-graph-openloop-mix,dflash-pcs-width-g,2,mix,7.0,413,66.9,157.9,7.4,19.6,1724.7,7847.0,1.0,
+final (c1879e9103 logic),r5-graph-openloop-mix,dflash-pcs-width-g,3,mix,1.0,57,47.6,90.0,4.0,8.4,598.9,4190.8,1.0,
+final (c1879e9103 logic),r5-graph-openloop-mix,dflash-pcs-width-g,4,mix,7.0,459,64.6,157.9,8.4,19.2,1992.1,7742.3,1.0,
+final (c1879e9103 logic),r5-graph-openloop-mix,dflash-pcs-width-g,all,,,979,63.8,150.3,7.1,19.0,1842.5,7590.3,1.0,242.16
+v3-ceiling,r5-final-openloop-mix,dflash-pcs-width-g,1,mix,1.0,50,44.6,92.4,4.6,7.8,645.0,4806.6,1.0,
+v3-ceiling,r5-final-openloop-mix,dflash-pcs-width-g,2,mix,7.0,413,62.4,155.9,7.0,15.6,1710.2,7247.0,1.0,
+v3-ceiling,r5-final-openloop-mix,dflash-pcs-width-g,3,mix,1.0,57,46.8,89.0,3.5,8.4,607.6,4214.1,1.0,
+v3-ceiling,r5-final-openloop-mix,dflash-pcs-width-g,4,mix,7.0,459,67.7,158.6,8.2,22.9,1952.3,8373.1,0.987,
+v3-ceiling,r5-final-openloop-mix,dflash-pcs-width-g,all,,,979,62.6,154.6,6.6,19.0,1777.8,7589.7,0.994,243.55
+v4-ceiling+per-request,r5-v4-openloop-mix,dflash-pcs-width-g,1,mix,1.0,50,46.2,97.5,4.6,7.8,635.5,4812.4,1.0,
+v4-ceiling+per-request,r5-v4-openloop-mix,dflash-pcs-width-g,2,mix,7.0,413,66.6,151.7,7.7,20.0,1672.5,8059.2,1.0,
+v4-ceiling+per-request,r5-v4-openloop-mix,dflash-pcs-width-g,3,mix,1.0,57,47.5,88.8,3.2,8.4,609.7,4443.6,1.0,
+v4-ceiling+per-request,r5-v4-openloop-mix,dflash-pcs-width-g,4,mix,7.0,459,66.6,164.5,8.4,23.6,2051.4,8697.4,0.989,
+v4-ceiling+per-request,r5-v4-openloop-mix,dflash-pcs-width-g,all,,,979,64.2,153.2,6.9,21.0,1868.1,8160.7,0.995,242.63
+v7-graph-aware,r5-v7-ol-mix,dflash-pcs-width-g,1,mix,1.0,50,49.1,92.5,4.6,7.7,637.5,4737.9,1.0,
+v7-graph-aware,r5-v7-ol-mix,dflash-pcs-width-g,2,mix,7.0,413,67.4,162.0,7.6,21.9,1700.5,8268.9,1.0,
+v7-graph-aware,r5-v7-ol-mix,dflash-pcs-width-g,3,mix,1.0,57,46.5,89.0,4.0,8.3,633.0,4485.6,1.0,
+v7-graph-aware,r5-v7-ol-mix,dflash-pcs-width-g,4,mix,7.0,459,68.0,158.7,8.5,23.5,2021.3,8415.8,0.996,
+v7-graph-aware,r5-v7-ol-mix,dflash-pcs-width-g,all,,,979,65.1,151.2,7.1,22.0,1847.0,7952.2,0.998,242.65

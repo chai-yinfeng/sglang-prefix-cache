@@ -1,0 +1,71 @@
+version,tag,algo,segment,dataset,rate,n,ttft_p50,ttft_p95,tpot_p50,tpot_p95,e2e_p50,e2e_p95,slo_attained,makespan_s
+static-b4,r5-openloop-natural,dflash-pcs-b4,1,natural,1.0,50,41.5,133.9,7.6,8.3,2231.3,5292.6,1.0,
+static-b4,r5-openloop-natural,dflash-pcs-b4,2,natural,7.0,413,48.2,155.4,11.3,14.3,2997.0,7538.9,1.0,
+static-b4,r5-openloop-natural,dflash-pcs-b4,3,natural,1.0,57,40.9,122.2,7.5,9.2,1873.7,5165.8,1.0,
+static-b4,r5-openloop-natural,dflash-pcs-b4,4,natural,7.0,459,46.9,140.9,10.8,13.1,2431.8,6531.3,1.0,
+static-b4,r5-openloop-natural,dflash-pcs-b4,all,,,979,46.9,142.7,10.7,13.5,2596.0,6910.4,1.0,243.74
+static-b4,r5-rep-b4-ol-natural-1,dflash-pcs-b4,1,natural,1.0,50,41.9,128.0,7.6,8.2,2230.9,5298.5,1.0,
+static-b4,r5-rep-b4-ol-natural-1,dflash-pcs-b4,2,natural,7.0,413,50.3,162.2,11.3,14.5,3013.6,7670.9,1.0,
+static-b4,r5-rep-b4-ol-natural-1,dflash-pcs-b4,3,natural,1.0,57,41.9,120.2,7.6,9.0,1933.6,5321.1,1.0,
+static-b4,r5-rep-b4-ol-natural-1,dflash-pcs-b4,4,natural,7.0,459,47.8,139.8,10.8,13.0,2410.4,6381.4,1.0,
+static-b4,r5-rep-b4-ol-natural-1,dflash-pcs-b4,all,,,979,48.2,144.4,10.8,13.7,2612.2,6982.6,1.0,243.75
+round4-policy,r5-openloop-natural,dflash-pcs-width,1,natural,1.0,50,41.8,132.9,6.8,8.0,1994.4,4812.4,1.0,
+round4-policy,r5-openloop-natural,dflash-pcs-width,2,natural,7.0,413,55.8,160.0,14.1,20.0,3834.9,9770.8,0.998,
+round4-policy,r5-openloop-natural,dflash-pcs-width,3,natural,1.0,57,44.5,121.0,7.2,9.4,1794.8,5125.5,1.0,
+round4-policy,r5-openloop-natural,dflash-pcs-width,4,natural,7.0,459,53.5,143.9,12.9,17.9,2954.4,7784.0,0.998,
+round4-policy,r5-openloop-natural,dflash-pcs-width,all,,,979,53.5,144.5,13.1,19.4,3180.1,8883.0,0.998,244.19
+final (c1879e9103 logic),r5-graph-openloop-natural,dflash-pcs-width-g,1,natural,1.0,50,43.7,127.4,6.9,8.0,1975.7,4821.8,1.0,
+final (c1879e9103 logic),r5-graph-openloop-natural,dflash-pcs-width-g,2,natural,7.0,413,56.4,154.7,13.4,22.4,3810.6,10286.6,0.998,
+final (c1879e9103 logic),r5-graph-openloop-natural,dflash-pcs-width-g,3,natural,1.0,57,40.2,121.3,7.1,9.2,1787.0,4934.3,1.0,
+final (c1879e9103 logic),r5-graph-openloop-natural,dflash-pcs-width-g,4,natural,7.0,459,49.8,141.0,12.0,17.2,2762.7,7253.3,0.998,
+final (c1879e9103 logic),r5-graph-openloop-natural,dflash-pcs-width-g,all,,,979,51.2,145.5,12.2,20.9,2985.0,8768.3,0.998,243.9
+final (c1879e9103 logic),r5-rep-pre-ol-natural-1,dflash-pcs-width-g,1,natural,1.0,50,42.8,131.5,6.9,8.0,1984.0,4826.2,1.0,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-1,dflash-pcs-width-g,2,natural,7.0,413,56.7,160.2,12.9,23.0,3712.1,9727.8,0.998,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-1,dflash-pcs-width-g,3,natural,1.0,57,40.3,120.9,7.1,8.5,1792.7,4898.8,1.0,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-1,dflash-pcs-width-g,4,natural,7.0,459,51.1,133.8,12.1,20.9,2824.9,8050.2,0.998,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-1,dflash-pcs-width-g,all,,,979,52.5,147.1,12.0,21.8,2985.6,8841.7,0.998,243.78
+final (c1879e9103 logic),r5-rep-pre-ol-natural-2,dflash-pcs-width-g,1,natural,1.0,50,43.6,129.5,6.9,8.0,1984.7,4830.9,1.0,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-2,dflash-pcs-width-g,2,natural,7.0,413,54.0,164.4,12.7,19.9,3617.1,9050.8,1.0,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-2,dflash-pcs-width-g,3,natural,1.0,57,40.2,122.0,7.1,8.9,1757.5,5130.3,1.0,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-2,dflash-pcs-width-g,4,natural,7.0,459,51.0,136.9,12.2,20.9,2861.3,7948.2,0.998,
+final (c1879e9103 logic),r5-rep-pre-ol-natural-2,dflash-pcs-width-g,all,,,979,51.4,145.0,12.0,20.1,2948.8,8343.3,0.999,243.62
+v3-ceiling,r5-final-openloop-natural,dflash-pcs-width-g,1,natural,1.0,50,43.6,129.7,6.9,8.0,1990.2,4846.0,1.0,
+v3-ceiling,r5-final-openloop-natural,dflash-pcs-width-g,2,natural,7.0,413,54.4,183.2,13.1,31.2,3708.5,12970.1,0.932,
+v3-ceiling,r5-final-openloop-natural,dflash-pcs-width-g,3,natural,1.0,57,158.2,228.0,29.1,40.3,7732.3,22289.7,0.596,
+v3-ceiling,r5-final-openloop-natural,dflash-pcs-width-g,4,natural,7.0,459,15942.8,19563.1,36.8,73.4,22900.3,36642.0,0.007,
+v3-ceiling,r5-final-openloop-natural,dflash-pcs-width-g,all,,,979,152.3,18787.7,29.2,63.5,8001.1,32918.5,0.482,274.4
+v4-ceiling+per-request,r5-v4-openloop-natural,dflash-pcs-width-g,1,natural,1.0,50,42.9,133.2,6.9,8.0,2020.0,4842.2,1.0,
+v4-ceiling+per-request,r5-v4-openloop-natural,dflash-pcs-width-g,2,natural,7.0,413,69.9,705.0,17.9,31.3,4838.5,13271.7,0.939,
+v4-ceiling+per-request,r5-v4-openloop-natural,dflash-pcs-width-g,3,natural,1.0,57,55.7,134.3,10.1,12.3,2419.3,7625.6,1.0,
+v4-ceiling+per-request,r5-v4-openloop-natural,dflash-pcs-width-g,4,natural,7.0,459,70.1,841.0,17.3,35.2,4019.5,12218.9,0.874,
+v4-ceiling+per-request,r5-v4-openloop-natural,dflash-pcs-width-g,all,,,979,67.6,636.0,16.6,33.7,4090.1,12615.3,0.915,244.78
+v4-ceiling+per-request,r5-rep-v4-ol-natural-1,dflash-pcs-width-g,1,natural,1.0,50,43.4,129.3,6.9,8.0,1981.2,4838.4,1.0,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-1,dflash-pcs-width-g,2,natural,7.0,413,54.6,163.0,13.2,20.8,3682.0,9477.4,0.998,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-1,dflash-pcs-width-g,3,natural,1.0,57,42.3,121.5,7.1,9.0,1783.4,5156.1,1.0,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-1,dflash-pcs-width-g,4,natural,7.0,459,54.6,142.1,13.1,20.4,2971.9,8594.8,0.998,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-1,dflash-pcs-width-g,all,,,979,53.5,143.4,12.8,20.3,3078.4,8846.7,0.998,243.96
+v4-ceiling+per-request,r5-rep-v4-ol-natural-2,dflash-pcs-width-g,1,natural,1.0,50,43.6,127.7,6.9,8.0,1985.4,4832.2,1.0,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-2,dflash-pcs-width-g,2,natural,7.0,413,77.3,1033.9,19.4,34.8,5663.9,15000.0,0.891,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-2,dflash-pcs-width-g,3,natural,1.0,57,45.2,117.0,7.2,9.7,1948.5,5184.1,1.0,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-2,dflash-pcs-width-g,4,natural,7.0,459,64.1,869.6,16.0,44.1,3602.6,13508.9,0.876,
+v4-ceiling+per-request,r5-rep-v4-ol-natural-2,dflash-pcs-width-g,all,,,979,66.3,869.6,16.3,37.8,3909.3,13649.0,0.896,250.4
+v6-per-request+graph-aware,r5-v6-ol-natural-1,dflash-pcs-width-g,1,natural,1.0,50,43.1,131.1,6.9,8.0,1972.8,4796.5,1.0,
+v6-per-request+graph-aware,r5-v6-ol-natural-1,dflash-pcs-width-g,2,natural,7.0,413,135.0,3545.3,19.5,39.6,6412.6,19671.0,0.508,
+v6-per-request+graph-aware,r5-v6-ol-natural-1,dflash-pcs-width-g,3,natural,1.0,57,39.8,123.1,7.1,8.5,1809.6,5246.4,1.0,
+v6-per-request+graph-aware,r5-v6-ol-natural-1,dflash-pcs-width-g,4,natural,7.0,459,52.5,140.0,11.9,17.4,2811.6,7479.7,0.998,
+v6-per-request+graph-aware,r5-v6-ol-natural-1,dflash-pcs-width-g,all,,,979,60.8,2788.2,12.9,36.6,3522.9,14381.4,0.792,243.9
+v7-graph-aware,r5-v7-ol-natural-1,dflash-pcs-width-g,1,natural,1.0,50,44.1,127.8,6.9,8.0,1977.2,4827.2,1.0,
+v7-graph-aware,r5-v7-ol-natural-1,dflash-pcs-width-g,2,natural,7.0,413,59.8,163.3,14.3,22.7,3996.3,10157.1,0.998,
+v7-graph-aware,r5-v7-ol-natural-1,dflash-pcs-width-g,3,natural,1.0,57,41.1,125.4,7.2,9.6,1797.1,5157.4,1.0,
+v7-graph-aware,r5-v7-ol-natural-1,dflash-pcs-width-g,4,natural,7.0,459,84.5,1311.8,21.5,40.4,4813.9,15639.3,0.667,
+v7-graph-aware,r5-v7-ol-natural-1,dflash-pcs-width-g,all,,,979,65.8,710.6,16.7,38.1,4041.8,13467.2,0.843,250.89
+v7-graph-aware,r5-v7-ol-natural-2,dflash-pcs-width-g,1,natural,1.0,50,42.2,129.7,6.9,7.9,1972.3,4818.1,1.0,
+v7-graph-aware,r5-v7-ol-natural-2,dflash-pcs-width-g,2,natural,7.0,413,56.8,181.2,14.2,48.3,3927.2,17811.5,0.869,
+v7-graph-aware,r5-v7-ol-natural-2,dflash-pcs-width-g,3,natural,1.0,57,147.5,278.7,29.9,48.5,7463.5,22521.8,0.509,
+v7-graph-aware,r5-v7-ol-natural-2,dflash-pcs-width-g,4,natural,7.0,459,6769.8,10553.1,36.6,62.4,14304.0,27741.5,0.0,
+v7-graph-aware,r5-v7-ol-natural-2,dflash-pcs-width-g,all,,,979,158.4,9809.3,30.9,56.0,8721.9,25170.5,0.447,264.86
+v7-graph-aware,r5-v7-ol-natural-3,dflash-pcs-width-g,1,natural,1.0,50,43.0,131.7,6.8,8.0,1978.0,4837.0,1.0,
+v7-graph-aware,r5-v7-ol-natural-3,dflash-pcs-width-g,2,natural,7.0,413,60.9,165.0,14.6,24.2,3931.2,11122.5,0.985,
+v7-graph-aware,r5-v7-ol-natural-3,dflash-pcs-width-g,3,natural,1.0,57,41.6,124.5,7.1,12.6,1914.5,5297.1,1.0,
+v7-graph-aware,r5-v7-ol-natural-3,dflash-pcs-width-g,4,natural,7.0,459,51.1,144.1,11.6,20.2,2827.1,7380.3,0.998,
+v7-graph-aware,r5-v7-ol-natural-3,dflash-pcs-width-g,all,,,979,53.4,150.5,12.0,22.7,3029.2,9503.6,0.993,244.01

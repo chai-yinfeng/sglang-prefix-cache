@@ -1,0 +1,21 @@
+probe,server,point,tpot_p50_ms
+r5-slowdown,dflash-pcs-observe,w16 c2 fresh,6.82
+r5-slowdown,dflash-pcs-observe,w16 c2 after w4 c48,6.5
+r5-slowdown,dflash-pcs-observe,w16 c2 after w6 c24,6.73
+r5-slowdown,dflash-pcs-observe,w16 c2 again,6.58
+r5-slowdown,dflash-pcs-observe-g,w16 c2 fresh,6.82
+r5-slowdown,dflash-pcs-observe-g,w16 c2 after w4 c48,6.49
+r5-slowdown,dflash-pcs-observe-g,w16 c2 after w6 c24,6.86
+r5-slowdown,dflash-pcs-observe-g,w16 c2 again,6.47
+r5-slowdown64,dflash-pcs-observe,w16 c2 fresh,6.82
+r5-slowdown64,dflash-pcs-observe,w16 c2 after w4 c48,6.5
+r5-slowdown64,dflash-pcs-observe,w16 c2 after w6 c24,6.71
+r5-slowdown64,dflash-pcs-observe,w16 c2 again,6.57
+r5-slowdown64,dflash-pcs-observe,w16 c2 after w3 c64,7.0
+r5-slowdown64,dflash-pcs-observe,w16 c2 after w16 c64,6.87
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 fresh,6.82
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 after w4 c48,6.49
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 after w6 c24,6.71
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 again,6.48
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 after w3 c64,6.89
+r5-slowdown64,dflash-pcs-observe-g,w16 c2 after w16 c64,6.99

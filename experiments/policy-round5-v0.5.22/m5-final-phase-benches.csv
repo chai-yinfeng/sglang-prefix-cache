@@ -1,0 +1,63 @@
+version,bench,phase,dataset,concurrency,output_tok_s,wall_s,tpot_p50,e2e_p50,e2e_p95
+final (c1879e9103 logic),r5-graph-mix,1,mix,16,1983.3,39.73,6.56,1329.0,6899.8
+final (c1879e9103 logic),r5-graph-mix,2,mix,64,3674.6,62.4,13.57,4250.5,11483.5
+final (c1879e9103 logic),r5-graph-mix,total,,,3016.5,102.14,,,
+final (c1879e9103 logic),r5-final-mix-rep2,1,mix,16,1965.4,40.09,6.38,1319.8,6878.4
+final (c1879e9103 logic),r5-final-mix-rep2,2,mix,64,3527.2,64.99,12.96,4102.1,12656.2
+final (c1879e9103 logic),r5-final-mix-rep2,total,,,2931.2,105.09,,,
+final (c1879e9103 logic),r5-final-mix-rep3,1,mix,16,1964.9,40.1,6.39,1319.3,6892.0
+final (c1879e9103 logic),r5-final-mix-rep3,2,mix,64,3513.3,65.23,12.95,4095.2,12581.1
+final (c1879e9103 logic),r5-final-mix-rep3,total,,,2923.7,105.33,,,
+final (c1879e9103 logic),r5-graph-natural,1,natural,4,531.8,37.79,7.21,1930.3,5018.0
+final (c1879e9103 logic),r5-graph-natural,2,natural,64,2910.5,51.36,19.73,5168.4,13600.6
+final (c1879e9103 logic),r5-graph-natural,3,natural,4,530.1,31.55,6.9,1724.7,4140.7
+final (c1879e9103 logic),r5-graph-natural,4,natural,64,3239.9,41.38,17.22,4243.4,10598.6
+final (c1879e9103 logic),r5-graph-natural,total,,,1976.5,162.09,,,
+final (c1879e9103 logic),r5-graph-mixed,1,natural,64,3207.1,35.87,17.17,4888.4,12098.7
+final (c1879e9103 logic),r5-graph-mixed,2,edit,4,2212.8,6.21,1.52,472.1,751.3
+final (c1879e9103 logic),r5-graph-mixed,3,edit,64,4506.3,25.86,12.0,4076.8,5930.1
+final (c1879e9103 logic),r5-graph-mixed,4,natural,16,1380.2,28.06,10.25,2668.2,7401.3
+final (c1879e9103 logic),r5-graph-mixed,5,natural,4,514.1,25.0,7.01,1539.4,4508.7
+final (c1879e9103 logic),r5-graph-mixed,6,edit,16,3760.1,10.13,3.61,1202.5,1749.7
+final (c1879e9103 logic),r5-graph-mixed,total,,,2554.6,131.14,,,
+final (c1879e9103 logic),r5-graph-edit,1,edit,4,2310.9,8.21,1.5,489.8,740.1
+final (c1879e9103 logic),r5-graph-edit,2,edit,64,4583.5,33.66,12.12,4036.6,5859.2
+final (c1879e9103 logic),r5-graph-edit,3,edit,4,2248.3,8.85,1.53,515.8,766.6
+final (c1879e9103 logic),r5-graph-edit,4,edit,64,4550.4,33.68,12.57,3978.3,5951.8
+final (c1879e9103 logic),r5-graph-edit,total,,,4104.1,84.41,,,
+v3-ceiling,r5-final-mix,1,mix,16,1958.7,40.23,6.23,1318.8,6831.8
+v3-ceiling,r5-final-mix,2,mix,64,3518.1,65.08,13.08,4103.0,12777.3
+v3-ceiling,r5-final-mix,total,,,2922.3,105.31,,,
+v4-ceiling+per-request,r5-v4-mix,1,mix,16,1989.9,39.6,6.35,1336.0,6889.7
+v4-ceiling+per-request,r5-v4-mix,2,mix,64,3466.9,66.07,14.26,4218.1,12841.2
+v4-ceiling+per-request,r5-v4-mix,total,,,2913.3,105.67,,,
+v4-ceiling+per-request,r5-v4-mix-rep2,1,mix,16,1964.5,40.11,6.38,1321.5,6890.2
+v4-ceiling+per-request,r5-v4-mix-rep2,2,mix,64,3493.6,65.56,13.95,4183.2,12764.6
+v4-ceiling+per-request,r5-v4-mix-rep2,total,,,2913.1,105.68,,,
+v4-ceiling+per-request,r5-v4-natural,1,natural,4,534.7,37.58,7.12,1928.8,4956.4
+v4-ceiling+per-request,r5-v4-natural,2,natural,64,2935.0,50.93,19.66,5173.4,13458.0
+v4-ceiling+per-request,r5-v4-natural,3,natural,4,528.5,31.64,7.01,1733.9,4229.6
+v4-ceiling+per-request,r5-v4-natural,4,natural,64,3250.6,41.29,17.35,4314.7,10620.6
+v4-ceiling+per-request,r5-v4-natural,total,,,1985.2,161.44,,,
+v4-ceiling+per-request,r5-v4-mixed,1,natural,64,3204.3,35.9,17.21,4903.0,12119.1
+v4-ceiling+per-request,r5-v4-mixed,2,edit,4,2210.6,6.22,1.52,472.6,752.6
+v4-ceiling+per-request,r5-v4-mixed,3,edit,64,4499.8,25.9,12.01,4080.8,5938.6
+v4-ceiling+per-request,r5-v4-mixed,4,natural,16,1379.4,28.07,10.26,2670.1,7403.4
+v4-ceiling+per-request,r5-v4-mixed,5,natural,4,514.0,25.0,7.02,1538.7,4514.4
+v4-ceiling+per-request,r5-v4-mixed,6,edit,16,3774.0,10.13,3.65,1205.8,1753.3
+v4-ceiling+per-request,r5-v4-mixed,total,,,2553.7,131.24,,,
+v4-ceiling+per-request,r5-v4-edit,1,edit,4,2304.1,8.23,1.51,491.8,745.1
+v4-ceiling+per-request,r5-v4-edit,2,edit,64,4567.0,33.79,12.16,4044.3,5891.3
+v4-ceiling+per-request,r5-v4-edit,3,edit,4,2246.4,8.86,1.53,516.9,768.2
+v4-ceiling+per-request,r5-v4-edit,4,edit,64,4547.4,33.69,12.43,4009.5,5913.0
+v4-ceiling+per-request,r5-v4-edit,total,,,4095.6,84.58,,,
+v7-graph-aware,r5-v7-mix,1,mix,16,1969.5,40.01,6.34,1305.9,6870.8
+v7-graph-aware,r5-v7-mix,2,mix,64,3510.4,65.3,13.02,4131.6,12906.0
+v7-graph-aware,r5-v7-mix,total,,,2924.9,105.32,,,
+v7-graph-aware,r5-v7-mixed,1,natural,64,3205.0,35.9,17.19,4895.8,12105.7
+v7-graph-aware,r5-v7-mixed,2,edit,4,2211.2,6.22,1.52,471.8,750.7
+v7-graph-aware,r5-v7-mixed,3,edit,64,4504.9,25.87,12.01,4077.8,5934.8
+v7-graph-aware,r5-v7-mixed,4,natural,16,1382.4,28.01,10.24,2665.7,7395.5
+v7-graph-aware,r5-v7-mixed,5,natural,4,513.8,25.01,7.02,1540.4,4514.3
+v7-graph-aware,r5-v7-mixed,6,edit,16,3787.5,10.1,3.63,1194.1,1748.3
+v7-graph-aware,r5-v7-mixed,total,,,2556.3,131.11,,,
