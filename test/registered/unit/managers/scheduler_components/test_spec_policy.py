@@ -453,9 +453,46 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(
             policy, SpecPolicyPlan(), steps=8 * window, batch_size=4, survival=0.97
         )
-        # 13 of 16 positions commit, so the round starts by re-measuring width 16.
-        plan = _width_steps(policy, plan, steps=window, batch_size=64, survival=0.97)
+        # 13 of 16 positions commit, so after one window (64 x 16 verify tokens per
+        # step close it in 16 steps) the round starts by re-measuring width 16.
+        short_window = mod._WIDTH_WINDOW_VERIFY_TOKENS // (64 * 16)
+        plan = _width_steps(
+            policy, plan, steps=short_window, batch_size=64, survival=0.97
+        )
         self.assertEqual(plan.verify_width, 16)
+
+    def test_a_half_wasted_window_jumps(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = SpecWidthPolicy(max_width=16)
+        plan = _width_steps(
+            policy,
+            SpecPolicyPlan(),
+            steps=8 * mod._REGIME_WINDOW_STEPS,
+            batch_size=4,
+            survival=0.85,
+        )
+        # 5.9 of 16 positions commit, as in a batch mixing chat and proofreading:
+        # the load spike still jumps under the ceiling on its first step.
+        plan = _width_steps(policy, plan, steps=1, batch_size=64, survival=0.85)
+        self.assertEqual(plan.verify_width, 4)
+
+    def test_a_wide_window_under_load_closes_early(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = SpecWidthPolicy(max_width=16)
+        plan = _width_steps(
+            policy,
+            SpecPolicyPlan(),
+            steps=8 * mod._REGIME_WINDOW_STEPS,
+            batch_size=4,
+            survival=0.97,
+        )
+        # 32 steps at 64 requests: two windows of 16 x 64 verify tokens per step (one
+        # starts the round, one re-measures the standing width) and the climb has
+        # moved, half a 64-step window in.
+        plan = _width_steps(policy, plan, steps=32, batch_size=64, survival=0.97)
+        self.assertEqual(plan.verify_width, 8)
 
     def test_a_load_drop_mid_round_returns_to_the_floor(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod

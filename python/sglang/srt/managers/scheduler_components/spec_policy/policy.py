@@ -61,9 +61,15 @@ _WIDTH_MIN_VERIFY_TOKENS = 64
 # Measured on the same setup: past this many verify tokens a step is compute-bound
 # (c16: 128 -> 256 tokens cost +47%), so every wasted verify position costs time.
 _WIDTH_MAX_VERIFY_TOKENS = 256
-# Arbitrary; a window that commits less than this fraction of its positions past
-# the compute-bound point jumps to the widest rung under it before climbing.
-_WIDTH_MIN_UTILIZATION = 0.25
+# A window that commits less than this fraction of its positions past the
+# compute-bound point jumps to the widest rung under it before climbing. Measured:
+# natural chat and proofreading in one c64 batch commit 0.43 of a 16-wide window
+# while width 3 runs 1.8x faster; climbing back up from the ceiling costs a few
+# short windows, staying wide costs seconds per window.
+_WIDTH_MIN_UTILIZATION = 0.5
+# Arbitrary; a window closes once its steps verified this many tokens, so a wide
+# window under load (16 x 64 tokens per step) measures in 16 steps, not 64.
+_WIDTH_WINDOW_VERIFY_TOKENS = 16384
 
 
 class SpecPolicy(Protocol):
@@ -338,11 +344,13 @@ class SpecWidthPolicy:
     verify-token bounds shortcut the climb: a width whose step would carry fewer
     than _WIDTH_MIN_VERIFY_TOKENS costs no less than a wider one, so it is never
     tried (at small batches that pins the full block, where noisy windows would
-    otherwise wander narrower); and a compute-bound step that commits only a small
-    fraction of its window jumps straight to the widest rung under
+    otherwise wander narrower); and a compute-bound step that commits less than
+    half of its window jumps straight to the widest rung under
     _WIDTH_MAX_VERIFY_TOKENS -- on the first step of a load jump that overshoots it
     twice, rather than after a window of slow steps. High-acceptance workloads keep
-    wide windows, since the climb itself may go back up.
+    wide windows, since the climb itself may go back up. A window also closes early
+    once it verified _WIDTH_WINDOW_VERIFY_TOKENS, so wide steps under load are not
+    measured for seconds.
     """
 
     def __init__(self, *, max_width: int) -> None:
@@ -379,7 +387,7 @@ class SpecWidthPolicy:
                 step_ms=observation.step_ms,
                 batch_size=observation.batch_size,
             )
-            if self._window.steps >= _REGIME_WINDOW_STEPS:
+            if self._window_is_full():
                 window = self._window
                 self._window = _GoodputWindow(settle_steps=0)
                 self._last_window = (self.width, window.accept_length)
@@ -395,6 +403,14 @@ class SpecWidthPolicy:
                     self._steps_since_decision += window.steps
                     self._maybe_start_round(window)
         return msgspec.structs.replace(current, verify_width=self.width)
+
+    def _window_is_full(self) -> bool:
+        window = self._window
+        return (
+            window.steps >= _REGIME_WINDOW_STEPS
+            or self.width * window.mean_batch_size * window.steps
+            >= _WIDTH_WINDOW_VERIFY_TOKENS
+        )
 
     def _maybe_start_round(self, window: _GoodputWindow) -> None:
         batch_size = window.mean_batch_size
