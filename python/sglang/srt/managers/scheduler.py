@@ -4980,6 +4980,7 @@ class Scheduler(
                 num_running=len(self.running_batch.reqs),
                 num_queued=len(self.waiting_queue),
                 pool_stats=self.pool_stats_observer.get_pool_stats(),
+                reqs=batch.reqs,
             )
 
         self.metrics_reporter.log_batch_result_stats(batch, result)

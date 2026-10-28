@@ -15,6 +15,8 @@ _KNEE_RATE_FRACTION = 0.6
 _HANDOVER_FACTOR = 1.5
 # Arbitrary; about one second of decode at 8B c64 cadence.
 _MIN_DWELL_STEPS = 16
+# Arbitrary; low enough that a priority request's 2nd draft outranks a low one's 1st.
+_LOW_PRIORITY_WEIGHT = 0.25
 
 
 class SpecPolicy(Protocol):
@@ -82,9 +84,28 @@ class LoadAwareVerifyPolicy:
         return target
 
 
+class PriorityWeightPolicy:
+    """Rank DSpark verify slots by accept probability x request weight.
+
+    Requests with a positive priority keep weight 1; the rest are discounted, so when
+    the confidence planner trims the verify budget under load, priority requests keep
+    their deeper verify windows. Below the planner's trimming point the weights
+    change nothing.
+    """
+
+    PLAN = SpecPolicyPlan(low_priority_weight=_LOW_PRIORITY_WEIGHT)
+
+    def decide(
+        self, *, observation: Observation, current: SpecPolicyPlan
+    ) -> SpecPolicyPlan:
+        return self.PLAN
+
+
 def build_spec_policy(*, name: str, sps_table_path: Optional[str]) -> SpecPolicy:
     if name == "observe":
         return ObservePolicy()
+    if name == "priority":
+        return PriorityWeightPolicy()
     if name == "load-aware":
         return LoadAwareVerifyPolicy(knee_tokens=_knee_tokens(sps_table_path))
     raise ValueError(f"Unknown speculative policy {name!r}.")

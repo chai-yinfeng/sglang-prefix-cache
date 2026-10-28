@@ -35,3 +35,5 @@ class SpecPolicyPlan(msgspec.Struct, frozen=True, omit_defaults=True):
 
     # Fraction of the full verify window the DSpark confidence planner may schedule.
     dspark_verify_budget_frac: Optional[float] = None
+    # Verify-slot ranking weight for requests without a positive priority; None = unweighted.
+    low_priority_weight: Optional[float] = None

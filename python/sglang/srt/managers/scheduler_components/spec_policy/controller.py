@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, Sequence
 
 import msgspec
 
@@ -65,6 +65,7 @@ class SpecPolicyController:
         num_running: int,
         num_queued: int,
         pool_stats: PoolStats,
+        reqs: Sequence,
     ) -> None:
         observation = self.sensor.observe(
             forward_mode=forward_mode,
@@ -77,7 +78,7 @@ class SpecPolicyController:
             now=time.monotonic(),
         )
         plan = self.policy.decide(observation=observation, current=self.plan)
-        self.actuator.apply(plan=plan, current=self.plan)
+        self.actuator.apply(plan=plan, current=self.plan, reqs=reqs)
         self.plan = plan
         self._write_trace(observation=observation, plan=plan)
 

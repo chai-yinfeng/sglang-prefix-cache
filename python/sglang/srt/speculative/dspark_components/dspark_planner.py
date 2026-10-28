@@ -135,6 +135,8 @@ class DSparkVerifyPlanner:
         self._dp_tier_gather_enabled = False
         self._is_verify_all = True
         self._uniform_layout_cache: dict = {}
+        # [req_pool_size] float32 on device; None until a policy sets weights.
+        self._request_weights: Optional[torch.Tensor] = None
         if self._ragged_verify_mode is not RaggedVerifyMode.STATIC:
             if self._confidence_head is None:
                 raise ValueError(
@@ -294,6 +296,24 @@ class DSparkVerifyPlanner:
     def set_forced_budget_frac(self, frac) -> None:
         if self._budget_planner is not None:
             self._budget_planner.forced_budget_frac = frac
+
+    def set_request_weights(
+        self, *, req_pool_indices: list[int], weights: list[float]
+    ) -> None:
+        """Rank verify slots by survival x request weight; the budget stays unweighted."""
+        if self._budget_planner is None or not req_pool_indices:
+            return
+        if self._request_weights is None:
+            req_pool_size = int(
+                self.model_runner.req_to_token_pool.req_to_token.shape[0]
+            )
+            self._request_weights = torch.ones(
+                req_pool_size, dtype=torch.float32, device=self.device
+            )
+        rows = torch.tensor(req_pool_indices, dtype=torch.int64, device=self.device)
+        self._request_weights[rows] = torch.tensor(
+            weights, dtype=torch.float32, device=self.device
+        )
 
     def compute_budget_sync(
         self,
@@ -536,6 +556,11 @@ class DSparkVerifyPlanner:
     ) -> Optional[torch.Tensor]:
         if self._budget_planner is None or confidence is None or budget is None:
             return None
+        if self._request_weights is not None:
+            confidence = weight_first_position(
+                confidence=confidence,
+                weights=self._request_weights[req_pool_indices.to(torch.int64)],
+            )
         verify_lens = ScheduleVerifyLensTopk.execute(
             confidence=confidence,
             budget=budget,
@@ -595,6 +620,17 @@ class DSparkVerifyPlanner:
                 int(lens[row]),
                 survival_str,
             )
+
+
+def weight_first_position(
+    *, confidence: torch.Tensor, weights: torch.Tensor
+) -> torch.Tensor:
+    """Scale each row's first confidence so every prefix survival product of that
+    row is scaled by the same weight: the top-k then ranks by survival x weight
+    while each row's own position order is unchanged."""
+    weighted = confidence.clone()
+    weighted[:, 0] = weighted[:, 0] * weights.to(weighted.dtype)
+    return weighted
 
 
 def local_verify_tier_num_tokens(

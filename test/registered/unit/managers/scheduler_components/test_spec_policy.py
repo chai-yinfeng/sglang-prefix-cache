@@ -2,7 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
+
+import torch
 
 from sglang.test.ci.ci_register import register_cpu_ci
 from sglang.test.test_utils import CustomTestCase, maybe_stub_sgl_kernel
@@ -31,6 +34,9 @@ from sglang.srt.managers.scheduler_components.spec_policy.types import (  # noqa
     SpecPolicyPlan,
 )
 from sglang.srt.model_executor.forward_batch_info import ForwardMode  # noqa: E402
+from sglang.srt.speculative.dspark_components.dspark_planner import (  # noqa: E402
+    weight_first_position,
+)
 
 register_cpu_ci(est_time=5, suite="base-a-test-cpu")
 
@@ -105,15 +111,62 @@ class TestSpecPolicySensor(CustomTestCase):
         self.assertEqual((obs.mamba.used, obs.mamba.available), (3, 9))
 
 
+def _req(rid, slot, priority=None):
+    # Mirrors Req: the pool row lives on req.kv.
+    return SimpleNamespace(
+        rid=rid, kv=SimpleNamespace(req_pool_idx=slot), priority=priority
+    )
+
+
 class TestSpecPolicyActuator(CustomTestCase):
     def test_only_changed_budget_reaches_worker(self):
         worker = Mock()
         actuator = SpecPolicyActuator(draft_worker=worker)
         same = SpecPolicyPlan(dspark_verify_budget_frac=0.5)
-        actuator.apply(plan=same, current=same)
+        actuator.apply(plan=same, current=same, reqs=[])
         worker.set_dspark_forced_budget_frac.assert_not_called()
-        actuator.apply(plan=SpecPolicyPlan(), current=same)
+        actuator.apply(plan=SpecPolicyPlan(), current=same, reqs=[])
         worker.set_dspark_forced_budget_frac.assert_called_once_with(None)
+
+    def test_request_weights_follow_slot_reuse_and_reset(self):
+        worker = Mock()
+        actuator = SpecPolicyActuator(draft_worker=worker)
+        on = SpecPolicyPlan(low_priority_weight=0.25)
+        reqs = [_req("a", 3, priority=1), _req("b", 5), _req("gone", None)]
+        actuator.apply(plan=on, current=on, reqs=reqs)
+        worker.set_dspark_request_weights.assert_called_once_with(
+            req_pool_indices=[3, 5], weights=[1.0, 0.25]
+        )
+        # Unchanged slots are not rewritten; a reused slot (new rid) is.
+        worker.reset_mock()
+        actuator.apply(
+            plan=on,
+            current=on,
+            reqs=[_req("a", 3, priority=1), _req("c", 5, priority=2)],
+        )
+        worker.set_dspark_request_weights.assert_called_once_with(
+            req_pool_indices=[5], weights=[1.0]
+        )
+        # Turning weighting off restores every slot it ever touched.
+        worker.reset_mock()
+        actuator.apply(plan=SpecPolicyPlan(), current=on, reqs=[])
+        worker.set_dspark_request_weights.assert_called_once_with(
+            req_pool_indices=[3, 5], weights=[1.0, 1.0]
+        )
+
+
+class TestWeightFirstPosition(CustomTestCase):
+    def test_every_survival_product_scales_by_the_row_weight(self):
+        confidence = torch.tensor([[0.9, 0.8, 0.5], [0.95, 0.6, 0.9]])
+        original = confidence.clone()
+        weights = torch.tensor([0.25, 1.0])
+        weighted = weight_first_position(confidence=confidence, weights=weights)
+        torch.testing.assert_close(
+            torch.cumprod(weighted, dim=1),
+            torch.cumprod(confidence, dim=1) * weights[:, None],
+        )
+        # The caller's tensor is left untouched (it is the draft's own output).
+        torch.testing.assert_close(confidence, original)
 
 
 def _decode(batch_size: int, *, mode: str = "DECODE") -> Observation:
@@ -180,6 +233,7 @@ class TestSpecPolicyController(CustomTestCase):
                     num_running=2,
                     num_queued=0,
                     pool_stats=_pool_stats(),
+                    reqs=[],
                 )
             records = [json.loads(line) for line in trace.read_text().splitlines()]
         self.assertEqual([r["observation"]["step"] for r in records], [1, 2, 3])

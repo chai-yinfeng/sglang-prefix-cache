@@ -555,6 +555,15 @@ class DSparkWorkerV2(BaseSpecWorker):
         self._forced_budget_frac = frac
         self._verify_planner.set_forced_budget_frac(frac)
 
+    def set_dspark_request_weights(
+        self, *, req_pool_indices: list[int], weights: list[float]
+    ) -> None:
+        if not self._hosts_draft:
+            return
+        self._verify_planner.set_request_weights(
+            req_pool_indices=req_pool_indices, weights=weights
+        )
+
     def dump_info_records(self) -> Optional[dict]:
         if not self._hosts_draft:
             return None
