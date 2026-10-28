@@ -96,6 +96,17 @@ class KvVmmArena:
         self._committed_by_offset[offset] = want
         self._range_backed += add
 
+    def decommit_all(self) -> None:
+        """Return all physical memory to the driver; the VA (and every tensor address
+        in it) stays reserved, so commit_range can back the same addresses again."""
+        if self._closed:
+            raise RuntimeError("KvVmmArena.decommit_all after close")
+        with torch.cuda.device(self.device_id):
+            torch.cuda.synchronize()
+            self._allocation.unmap_all()
+        self._committed_by_offset = {}
+        self._range_backed = 0
+
     @property
     def backed_bytes(self) -> int:
         """Total physically-backed bytes (sum of scattered per-buffer ranges)."""

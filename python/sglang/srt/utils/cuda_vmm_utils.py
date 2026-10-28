@@ -642,6 +642,17 @@ class VmmReservation:
 
         self._mappings.append((address, size, None))
 
+    def unmap_all(self) -> None:
+        """Unmap and release every mapping but keep the VA reserved for a later map()."""
+        if self._closed:
+            raise RuntimeError("VmmReservation.unmap_all after close")
+        drv = _get_cuda_driver()
+        while self._mappings:
+            address, size, handle = self._mappings.pop()
+            check_drv(drv.cuMemUnmap(address, size), "cuMemUnmap(local)")
+            if handle is not None:
+                check_drv(drv.cuMemRelease(handle), "cuMemRelease(local)")
+
     def close(self, *, release_handles: bool = True) -> None:
         """Unmap allocations, optionally release retained handles, and free VA."""
         if self._closed:
