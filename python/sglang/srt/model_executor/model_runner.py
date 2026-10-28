@@ -133,6 +133,7 @@ from sglang.srt.model_executor.model_runner_components.cuda_graph_setup import (
 )
 from sglang.srt.model_executor.model_runner_components.kv_pool_runtime import (
     compute_post_capture_kv_resize,
+    grow_post_capture_kv_pool,
     is_post_capture_kv_active,
 )
 from sglang.srt.model_executor.model_runner_components.layer_setup import (
@@ -1059,6 +1060,15 @@ class ModelRunner:
                 self.memory_pool_config.max_running_requests = (
                     resize.capped_max_running_requests
                 )
+
+    def grow_kv_pool(self, *, target_num_tokens: int, draft_runners=()) -> int:
+        new_size = grow_post_capture_kv_pool(
+            self, draft_runners=draft_runners, target_num_tokens=target_num_tokens
+        )
+        self.max_total_num_tokens = new_size
+        if self.memory_pool_config is not None:
+            self.memory_pool_config.max_total_num_tokens = new_size
+        return new_size
 
     def post_capture_elastic_ep_recover(self):
         join_process_groups()

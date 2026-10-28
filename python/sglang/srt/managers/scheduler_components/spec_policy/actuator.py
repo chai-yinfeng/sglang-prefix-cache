@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 from sglang.srt.managers.scheduler_components.spec_policy.types import SpecPolicyPlan
 
@@ -12,8 +12,11 @@ def request_weight(*, priority: Optional[int], low_priority_weight: float) -> fl
 class SpecPolicyActuator:
     """Applies plan changes through the engine's existing runtime knobs."""
 
-    def __init__(self, *, draft_worker) -> None:
+    def __init__(
+        self, *, draft_worker, grow_kv_pool: Optional[Callable[[int], int]] = None
+    ) -> None:
         self._draft_worker = draft_worker
+        self._grow_kv_pool = grow_kv_pool
         # req_pool_idx -> (rid, weight) last written; a reused slot has a new rid.
         self._written: dict[int, tuple[str, float]] = {}
 
@@ -30,6 +33,12 @@ class SpecPolicyActuator:
             )
         elif current.low_priority_weight is not None:
             self._reset_request_weights()
+        if (
+            plan.target_kv_tokens is not None
+            and plan.target_kv_tokens != current.target_kv_tokens
+            and self._grow_kv_pool is not None
+        ):
+            self._grow_kv_pool(plan.target_kv_tokens)
 
     def _write_request_weights(
         self, *, reqs: Sequence, low_priority_weight: float

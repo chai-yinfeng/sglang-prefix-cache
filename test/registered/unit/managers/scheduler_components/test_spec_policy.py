@@ -21,8 +21,15 @@ from sglang.srt.managers.scheduler_components.spec_policy.actuator import (  # n
 from sglang.srt.managers.scheduler_components.spec_policy.controller import (  # noqa: E402
     SpecPolicyController,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.ledger import (  # noqa: E402
+    MemoryLedger,
+    _unique_param_bytes,
+)
 from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noqa: E402
+    CompositePolicy,
     LoadAwareVerifyPolicy,
+    MemoryHeadroomPolicy,
+    PriorityWeightPolicy,
     knee_tokens_from_sps,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (  # noqa: E402
@@ -128,6 +135,14 @@ class TestSpecPolicyActuator(CustomTestCase):
         actuator.apply(plan=SpecPolicyPlan(), current=same, reqs=[])
         worker.set_dspark_forced_budget_frac.assert_called_once_with(None)
 
+    def test_kv_growth_fires_once_per_new_target(self):
+        grow = Mock(return_value=70000)
+        actuator = SpecPolicyActuator(draft_worker=Mock(), grow_kv_pool=grow)
+        grown = SpecPolicyPlan(target_kv_tokens=70000)
+        actuator.apply(plan=grown, current=SpecPolicyPlan(), reqs=[])
+        actuator.apply(plan=grown, current=grown, reqs=[])
+        grow.assert_called_once_with(70000)
+
     def test_request_weights_follow_slot_reuse_and_reset(self):
         worker = Mock()
         actuator = SpecPolicyActuator(draft_worker=worker)
@@ -211,6 +226,97 @@ class TestLoadAwareVerifyPolicy(CustomTestCase):
         self.assertEqual(plan, LoadAwareVerifyPolicy.FULL)
 
 
+class TestMemoryLedger(CustomTestCase):
+    def test_shared_draft_storage_is_counted_once(self):
+        target = torch.nn.Linear(4, 4, bias=False)
+        draft = torch.nn.Module()
+        draft.head = target.weight  # a draft sharing the target's lm_head storage
+        draft.own = torch.nn.Parameter(torch.zeros(2, 2))
+        seen: set[int] = set()
+        self.assertEqual(_unique_param_bytes([target], seen), 16 * 4)
+        self.assertEqual(_unique_param_bytes([draft], seen), 4 * 4)
+
+    def test_freed_bytes_convert_at_target_plus_draft_lane(self):
+        # Qwen3-8B BF16 with DSpark: 144 KiB target + 20 KiB draft per token.
+        ledger = MemoryLedger(
+            kv_capacity_tokens=60000,
+            target_kv_bytes_per_token=144 * 1024,
+            draft_kv_bytes_per_token=20 * 1024,
+            target_weights_bytes=0,
+            draft_weights_bytes=2 << 30,
+        )
+        self.assertEqual(ledger.tokens_for_bytes(ledger.draft_weights_bytes), 12787)
+
+
+def _headroom_obs(free_bytes, capacity=60000):
+    return Observation(
+        step=0,
+        forward_mode="DECODE",
+        batch_size=8,
+        num_running=8,
+        num_queued=0,
+        kv=PoolUsage(used=0, evictable=0, available=0),
+        free_gpu_bytes=free_bytes,
+        kv_capacity_tokens=capacity,
+    )
+
+
+_LEDGER = MemoryLedger(
+    kv_capacity_tokens=60000,
+    target_kv_bytes_per_token=144 * 1024,
+    draft_kv_bytes_per_token=20 * 1024,
+    target_weights_bytes=0,
+    draft_weights_bytes=0,
+)
+
+
+class TestMemoryHeadroomPolicy(CustomTestCase):
+    def test_grows_by_the_window_floor_minus_margin(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = MemoryHeadroomPolicy(ledger=_LEDGER)
+        plan = SpecPolicyPlan()
+        # A brief dip inside the window sets the floor, not the latest sample.
+        frees = [5 << 30] * (mod._HEADROOM_WINDOW_STEPS - 1) + [3 << 30]
+        for i, free in enumerate(frees):
+            plan = policy.decide(observation=_headroom_obs(free), current=plan)
+            if i < len(frees) - 1:
+                self.assertIsNone(plan.target_kv_tokens)
+        expected = 60000 + _LEDGER.tokens_for_bytes(
+            (3 << 30) - mod._HEADROOM_MARGIN_BYTES
+        )
+        self.assertEqual(plan.target_kv_tokens, expected)
+        # The window restarts after a growth.
+        plan = policy.decide(
+            observation=_headroom_obs(5 << 30, capacity=expected), current=plan
+        )
+        self.assertEqual(plan.target_kv_tokens, expected)
+
+    def test_no_growth_when_spare_is_below_the_minimum(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = MemoryHeadroomPolicy(ledger=_LEDGER)
+        plan = SpecPolicyPlan()
+        for _ in range(mod._HEADROOM_WINDOW_STEPS + 5):
+            plan = policy.decide(
+                observation=_headroom_obs(mod._HEADROOM_MARGIN_BYTES + (100 << 20)),
+                current=plan,
+            )
+        self.assertIsNone(plan.target_kv_tokens)
+
+    def test_composite_members_keep_each_others_fields(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        policy = CompositePolicy(
+            [PriorityWeightPolicy(), MemoryHeadroomPolicy(ledger=_LEDGER)]
+        )
+        plan = SpecPolicyPlan()
+        for _ in range(mod._HEADROOM_WINDOW_STEPS):
+            plan = policy.decide(observation=_headroom_obs(5 << 30), current=plan)
+        self.assertIsNotNone(plan.target_kv_tokens)
+        self.assertEqual(plan.low_priority_weight, 0.25)
+
+
 class TestSpecPolicyController(CustomTestCase):
     def test_observe_policy_traces_without_acting(self):
         worker = Mock()
@@ -235,7 +341,11 @@ class TestSpecPolicyController(CustomTestCase):
                     pool_stats=_pool_stats(),
                     reqs=[],
                 )
-            records = [json.loads(line) for line in trace.read_text().splitlines()]
+            header, *records = [
+                json.loads(line) for line in trace.read_text().splitlines()
+            ]
+        # Offline replay reads the ledger header first, then one record per step.
+        self.assertEqual(header, {"ledger": None})
         self.assertEqual([r["observation"]["step"] for r in records], [1, 2, 3])
         self.assertEqual(records[0]["observation"]["forward_mode"], "DECODE")
         self.assertEqual(records[0]["plan"], {})

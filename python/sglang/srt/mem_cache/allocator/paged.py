@@ -392,6 +392,32 @@ class PagedTokenToKVPoolAllocator(BaseTokenToKVPoolAllocator):
             # the no-double-free contract can only break across a group's calls
             self._debug_check_no_duplicate_pages()
 
+    def grow(self, new_size: int) -> None:
+        """Append pages (num_pages, new num_pages] to the free list while serving.
+
+        Unlike resize(), live pages held by requests and the radix tree are kept;
+        the caller must have backed the new slots first. New ids are all above the
+        old num_pages, so they cannot collide with any page already handed out.
+        """
+        new_num_pages = new_size // self.page_size
+        if new_num_pages <= self.num_pages:
+            return
+        self.free_pages = torch.cat(
+            (
+                self.free_pages,
+                torch.arange(
+                    self.num_pages + 1,
+                    new_num_pages + 1,
+                    dtype=torch.int64,
+                    device=self.device,
+                ),
+            )
+        )
+        self.size = new_num_pages * self.page_size
+        self.num_pages = new_num_pages
+        if self.debug_mode:
+            self._debug_check_no_duplicate_pages()
+
     def clear(self):
         # The padded slot 0 is used for writing dummy outputs from padded tokens.
         self.free_pages = torch.arange(

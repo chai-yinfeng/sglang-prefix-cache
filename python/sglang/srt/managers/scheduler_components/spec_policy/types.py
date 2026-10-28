@@ -28,6 +28,10 @@ class Observation(msgspec.Struct, frozen=True, omit_defaults=True):
     # Tokens per request per verify step, bonus included (paper tau).
     accept_length_ema: Optional[float] = None
     num_verify_tokens_per_req: Optional[int] = None
+    # Device-wide free bytes, sampled every few steps (a driver call).
+    free_gpu_bytes: Optional[int] = None
+    # Current token KV capacity: used + evictable + available.
+    kv_capacity_tokens: Optional[int] = None
 
 
 class SpecPolicyPlan(msgspec.Struct, frozen=True, omit_defaults=True):
@@ -37,3 +41,5 @@ class SpecPolicyPlan(msgspec.Struct, frozen=True, omit_defaults=True):
     dspark_verify_budget_frac: Optional[float] = None
     # Verify-slot ranking weight for requests without a positive priority; None = unweighted.
     low_priority_weight: Optional[float] = None
+    # Token KV capacity to grow to while serving; None = keep the startup size.
+    target_kv_tokens: Optional[int] = None

@@ -214,3 +214,58 @@ def compute_post_capture_kv_resize(
         unified_memory_pool_bytes=config.unified_memory_pool_bytes,
         capped_max_running_requests=capped_max_running_requests,
     )
+
+
+def grow_post_capture_kv_pool(
+    model_runner: ModelRunner,
+    *,
+    draft_runners: tuple[ModelRunner, ...] = (),
+    target_num_tokens: int,
+) -> int:
+    """Back more of the reserved KV range while serving and hand the new pages to
+    the allocator, leaving every live slot in place; returns the new capacity.
+
+    Only a plain post-capture MHA pool on the paged allocator can grow: its tensors
+    already span the whole reservation, so CUDA graphs and kernels see the same
+    addresses. Drafts indexed by the target's slots grow in lockstep.
+    """
+    from sglang.srt.mem_cache.allocator.paged import PagedTokenToKVPoolAllocator
+    from sglang.srt.mem_cache.memory_pool import MHATokenToKVPool
+
+    pool = model_runner.token_to_kv_pool
+    allocator = model_runner.token_to_kv_pool_allocator
+    if not (
+        type(pool) is MHATokenToKVPool
+        and pool.post_capture_active
+        and isinstance(allocator, PagedTokenToKVPoolAllocator)
+    ):
+        return pool.size
+    draft_pools = tuple(
+        runner.token_to_kv_pool
+        for runner in draft_runners
+        if runner.token_to_kv_pool is not pool
+        and runner.token_to_kv_pool.post_capture_active
+    )
+    ceiling = min(
+        [pool.post_capture_reserved_num_tokens]
+        + [draft_pool.post_capture_reserved_num_tokens for draft_pool in draft_pools]
+    )
+    page_size = allocator.page_size
+    new_size = min(target_num_tokens, ceiling) // page_size * page_size
+    if new_size <= pool.size:
+        return pool.size
+    old_size = pool.size
+    pool._finalize_backing_tokens(new_size)
+    for draft_pool in draft_pools:
+        draft_pool._finalize_backing_tokens(new_size)
+    # The new pages must be mapped before any kernel can be handed their slots.
+    torch.cuda.synchronize()
+    allocator.grow(new_size)
+    logger.info(
+        "KV pool grown while serving: #tokens %d -> %d (reserved %d), avail mem=%.2f GB",
+        old_size,
+        new_size,
+        ceiling,
+        get_available_gpu_memory(model_runner.device, model_runner.gpu_id),
+    )
+    return new_size

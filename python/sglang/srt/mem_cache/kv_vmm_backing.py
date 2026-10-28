@@ -267,6 +267,11 @@ class KvVmmBufferOwner:
     # -- accessors / teardown -------------------------------------------------
 
     @property
+    def reserved_num_tokens(self) -> int:
+        """Largest capacity finalize() can ever back; growth stops here."""
+        return self._reserved_num_tokens
+
+    @property
     def backed_bytes(self) -> int:
         return self._arena.backed_bytes if self._arena is not None else 0
 

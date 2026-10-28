@@ -46,6 +46,7 @@ class SpecPolicySensor:
         num_queued: int,
         pool_stats: PoolStats,
         now: float,
+        free_gpu_bytes: Optional[int] = None,
     ) -> Observation:
         self._step += 1
         if forward_mode.is_decode() and batch_size > 0:
@@ -73,6 +74,12 @@ class SpecPolicySensor:
             step_ms_ema=self._step_ms_ema,
             accept_length_ema=self._accept_length_ema,
             num_verify_tokens_per_req=self._num_verify_tokens_per_req,
+            free_gpu_bytes=free_gpu_bytes,
+            kv_capacity_tokens=(
+                pool_stats.full_num_used
+                + pool_stats.full_evictable_size
+                + pool_stats.full_available_size
+            ),
         )
 
     def _observe_decode(

@@ -236,5 +236,30 @@ class TestBaseFallbackFreeSegments(unittest.TestCase):
         self.assertTrue(torch.equal(alloc.freed[0], row[0:6]))
 
 
+class TestGrowWhileServing(unittest.TestCase):
+    def test_grow_appends_new_pages_and_keeps_live_ones(self):
+        alloc = _make_allocator()
+        live = alloc.alloc(10 * PAGE_SIZE)
+        free_before = alloc.free_pages.clone()
+        alloc.grow((NUM_PAGES + 8) * PAGE_SIZE)
+        self.assertEqual(alloc.num_pages, NUM_PAGES + 8)
+        self.assertEqual(alloc.size, (NUM_PAGES + 8) * PAGE_SIZE)
+        # Existing free pages keep their order; only ids above the old range are added.
+        torch.testing.assert_close(alloc.free_pages[: free_before.numel()], free_before)
+        self.assertEqual(
+            alloc.free_pages[free_before.numel() :].tolist(),
+            list(range(NUM_PAGES + 1, NUM_PAGES + 9)),
+        )
+        # Pages handed out before the growth never come back as free.
+        live_pages = set((live // PAGE_SIZE).tolist())
+        self.assertFalse(live_pages & set(alloc.free_pages.tolist()))
+        self.assertEqual(alloc.available_size(), (NUM_PAGES + 8 - 10) * PAGE_SIZE)
+
+    def test_grow_never_shrinks(self):
+        alloc = _make_allocator()
+        alloc.grow((NUM_PAGES - 4) * PAGE_SIZE)
+        self.assertEqual(alloc.num_pages, NUM_PAGES)
+
+
 if __name__ == "__main__":
     unittest.main()

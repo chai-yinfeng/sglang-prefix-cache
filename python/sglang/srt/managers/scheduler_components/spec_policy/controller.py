@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import time
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO, Callable, Optional, Sequence
 
 import msgspec
+import torch
 
 from sglang.srt.managers.scheduler_components.pool_stats_observer import PoolStats
 from sglang.srt.managers.scheduler_components.spec_policy.actuator import (
     SpecPolicyActuator,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.ledger import MemoryLedger
 from sglang.srt.managers.scheduler_components.spec_policy.policy import (
     build_spec_policy,
 )
@@ -23,11 +25,17 @@ from sglang.srt.model_executor.forward_batch_info import ForwardMode
 
 # Arbitrary; roughly a 10-step memory at decode cadence.
 _EMA_ALPHA = 0.1
+# Arbitrary; cudaMemGetInfo is cheap but not free, and free memory moves slowly.
+_FREE_MEMORY_SAMPLE_STEPS = 32
 
 
 class _TraceRecord(msgspec.Struct, frozen=True):
     observation: Observation
     plan: SpecPolicyPlan
+
+
+class _TraceHeader(msgspec.Struct, frozen=True):
+    ledger: Optional[MemoryLedger]
 
 
 class SpecPolicyController:
@@ -45,15 +53,25 @@ class SpecPolicyController:
         draft_worker,
         trace_path: Optional[str],
         is_trace_writer: bool,
+        ledger: Optional[MemoryLedger] = None,
+        grow_kv_pool: Optional[Callable[[int], int]] = None,
     ) -> None:
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
-        self.policy = build_spec_policy(name=policy_name, sps_table_path=sps_table_path)
-        self.actuator = SpecPolicyActuator(draft_worker=draft_worker)
+        self.policy = build_spec_policy(
+            name=policy_name, sps_table_path=sps_table_path, ledger=ledger
+        )
+        self.actuator = SpecPolicyActuator(
+            draft_worker=draft_worker, grow_kv_pool=grow_kv_pool
+        )
         self.plan = SpecPolicyPlan()
         self._trace: Optional[BinaryIO] = (
             open(trace_path, "ab") if trace_path and is_trace_writer else None
         )
         self._encoder = msgspec.json.Encoder()
+        self.ledger = ledger
+        self._steps = 0
+        self._free_gpu_bytes: Optional[int] = None
+        self._write(_TraceHeader(ledger=ledger))
 
     def on_batch_result(
         self,
@@ -67,7 +85,11 @@ class SpecPolicyController:
         pool_stats: PoolStats,
         reqs: Sequence,
     ) -> None:
+        self._steps += 1
+        if self._steps % _FREE_MEMORY_SAMPLE_STEPS == 1:
+            self._free_gpu_bytes = _free_gpu_bytes()
         observation = self.sensor.observe(
+            free_gpu_bytes=self._free_gpu_bytes,
             forward_mode=forward_mode,
             batch_size=batch_size,
             num_correct_drafts=num_correct_drafts,
@@ -88,10 +110,17 @@ class SpecPolicyController:
             self._trace = None
 
     def _write_trace(self, *, observation: Observation, plan: SpecPolicyPlan) -> None:
+        self._write(_TraceRecord(observation=observation, plan=plan))
+
+    def _write(self, record: msgspec.Struct) -> None:
         if self._trace is None:
             return
-        self._trace.write(
-            self._encoder.encode(_TraceRecord(observation=observation, plan=plan))
-            + b"\n"
-        )
+        self._trace.write(self._encoder.encode(record) + b"\n")
         self._trace.flush()
+
+
+def _free_gpu_bytes() -> Optional[int]:
+    if not torch.cuda.is_available():
+        return None
+    free_bytes, _ = torch.cuda.mem_get_info()
+    return int(free_bytes)

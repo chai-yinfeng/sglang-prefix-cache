@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Sequence
 
+import msgspec
+
+from sglang.srt.managers.scheduler_components.spec_policy.ledger import MemoryLedger
 from sglang.srt.managers.scheduler_components.spec_policy.types import (
     Observation,
     SpecPolicyPlan,
@@ -17,6 +20,14 @@ _HANDOVER_FACTOR = 1.5
 _MIN_DWELL_STEPS = 16
 # Arbitrary; low enough that a priority request's 2nd draft outranks a low one's 1st.
 _LOW_PRIORITY_WEIGHT = 0.25
+# Arbitrary; about half a minute of serving at 8B c64, long enough to see prefill and
+# decode activation peaks before trusting the free-memory floor.
+_HEADROOM_WINDOW_STEPS = 600
+# Kept free on top of the observed floor. Measured: serving at a 0.74 GB floor ran
+# without OOM (8B DSpark, post-capture sizing); 1 GiB adds slack for new shapes.
+_HEADROOM_MARGIN_BYTES = 1 << 30
+# Arbitrary; below this a growth is not worth a synchronize.
+_MIN_GROWTH_TOKENS = 2048
 
 
 class SpecPolicy(Protocol):
@@ -93,19 +104,87 @@ class PriorityWeightPolicy:
     change nothing.
     """
 
-    PLAN = SpecPolicyPlan(low_priority_weight=_LOW_PRIORITY_WEIGHT)
+    def decide(
+        self, *, observation: Observation, current: SpecPolicyPlan
+    ) -> SpecPolicyPlan:
+        return msgspec.structs.replace(
+            current, low_priority_weight=_LOW_PRIORITY_WEIGHT
+        )
+
+
+class MemoryHeadroomPolicy:
+    """Grow the KV pool into device memory that stays free under the real load.
+
+    The startup split reserves activation headroom from a static fraction. This
+    policy watches the free memory the load actually leaves (the caching allocator
+    keeps its high-water reservations, so sampled free memory is a running floor)
+    and, after a warmup window, hands what is left above a safety margin to the KV
+    pool. Each growth restarts the window.
+    """
+
+    def __init__(self, *, ledger: Optional[MemoryLedger]) -> None:
+        self._ledger = ledger
+        self._steps_since_growth = 0
+        self._min_free_bytes: Optional[int] = None
 
     def decide(
         self, *, observation: Observation, current: SpecPolicyPlan
     ) -> SpecPolicyPlan:
-        return self.PLAN
+        self._steps_since_growth += 1
+        if observation.free_gpu_bytes is not None:
+            self._min_free_bytes = (
+                observation.free_gpu_bytes
+                if self._min_free_bytes is None
+                else min(self._min_free_bytes, observation.free_gpu_bytes)
+            )
+        if (
+            self._ledger is None
+            or observation.kv_capacity_tokens is None
+            or self._min_free_bytes is None
+            or self._steps_since_growth < _HEADROOM_WINDOW_STEPS
+        ):
+            return current
+        extra_tokens = self._ledger.tokens_for_bytes(
+            max(self._min_free_bytes - _HEADROOM_MARGIN_BYTES, 0)
+        )
+        if extra_tokens < _MIN_GROWTH_TOKENS:
+            return current
+        self._steps_since_growth = 0
+        self._min_free_bytes = None
+        return msgspec.structs.replace(
+            current,
+            target_kv_tokens=observation.kv_capacity_tokens + extra_tokens,
+        )
 
 
-def build_spec_policy(*, name: str, sps_table_path: Optional[str]) -> SpecPolicy:
+class CompositePolicy:
+    """Each member owns its own plan fields; they are applied in order."""
+
+    def __init__(self, policies: Sequence[SpecPolicy]) -> None:
+        self._policies = tuple(policies)
+
+    def decide(
+        self, *, observation: Observation, current: SpecPolicyPlan
+    ) -> SpecPolicyPlan:
+        plan = current
+        for policy in self._policies:
+            plan = policy.decide(observation=observation, current=plan)
+        return plan
+
+
+def build_spec_policy(
+    *, name: str, sps_table_path: Optional[str], ledger: Optional[MemoryLedger] = None
+) -> SpecPolicy:
     if name == "observe":
         return ObservePolicy()
     if name == "priority":
         return PriorityWeightPolicy()
+    if name == "memory":
+        return MemoryHeadroomPolicy(ledger=ledger)
+    if name == "conditional":
+        return CompositePolicy(
+            [PriorityWeightPolicy(), MemoryHeadroomPolicy(ledger=ledger)]
+        )
     if name == "load-aware":
         return LoadAwareVerifyPolicy(knee_tokens=_knee_tokens(sps_table_path))
     raise ValueError(f"Unknown speculative policy {name!r}.")

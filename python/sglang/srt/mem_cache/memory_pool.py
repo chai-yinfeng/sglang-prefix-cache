@@ -2659,6 +2659,14 @@ class MHATokenToKVPool(KVCache):
     def post_capture_backed_bytes(self) -> int:
         return self._post_capture_owner.backed_bytes if self._post_capture_owner else 0
 
+    @property
+    def post_capture_reserved_num_tokens(self) -> int:
+        return (
+            self._post_capture_owner.reserved_num_tokens
+            if self._post_capture_owner
+            else self.size
+        )
+
     def _clear_buffers(self):
         del self.k_buffer
         del self.v_buffer

@@ -281,6 +281,9 @@ from sglang.srt.managers.scheduler_components.request_receiver import (
 from sglang.srt.managers.scheduler_components.spec_policy.controller import (
     SpecPolicyController,
 )
+from sglang.srt.managers.scheduler_components.spec_policy.ledger import (
+    build_memory_ledger,
+)
 from sglang.srt.managers.scheduler_components.weight_updater import (
     SchedulerWeightUpdaterManager,
 )
@@ -2597,7 +2600,47 @@ class Scheduler(
                 draft_worker=self.draft_worker,
                 trace_path=get_spec().speculative_policy_trace_path,
                 is_trace_writer=get_parallel().tp_rank == 0,
+                grow_kv_pool=self.grow_kv_capacity,
+                ledger=build_memory_ledger(
+                    target_runner=self.tp_worker.model_runner,
+                    draft_runners=(
+                        self.draft_worker._draft_model_runners()
+                        if self.draft_worker is not None
+                        else ()
+                    ),
+                ),
             )
+
+    def grow_kv_capacity(self, target_num_tokens: int) -> int:
+        """Grow the token KV pool while serving; returns the capacity now in effect."""
+        new_size = self.tp_worker.model_runner.grow_kv_pool(
+            target_num_tokens=target_num_tokens,
+            draft_runners=(
+                self.draft_worker._draft_model_runners()
+                if self.draft_worker is not None
+                else ()
+            ),
+        )
+        if new_size != self.max_total_num_tokens:
+            self.max_total_num_tokens = new_size
+            self.refresh_kv_capacity_views()
+        return new_size
+
+    def refresh_kv_capacity_views(self) -> None:
+        """Re-point the components that copied the KV capacity at startup."""
+        # A stale capacity turns pool usage negative and trips the stats asserts.
+        capacity = self.max_total_num_tokens * self.kv_shard_widening
+        self.pool_stats_observer = dataclasses.replace(
+            self.pool_stats_observer, max_total_num_tokens=capacity
+        )
+        self.load_inquirer = dataclasses.replace(
+            self.load_inquirer,
+            max_total_num_tokens=capacity,
+            pool_stats_observer=self.pool_stats_observer,
+        )
+        self.invariant_checker.max_total_num_tokens = capacity
+        self.invariant_checker.pool_stats_observer = self.pool_stats_observer
+        self.kv_events_publisher.max_total_num_tokens = self.max_total_num_tokens
 
     def init_req_max_new_tokens(self, req):
         input_len = len(req.origin_input_ids)
