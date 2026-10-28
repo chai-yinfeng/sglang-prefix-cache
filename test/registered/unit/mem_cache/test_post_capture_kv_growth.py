@@ -89,6 +89,30 @@ class TestPostCaptureKVGrowth(unittest.TestCase):
         pool.v_buffer[_LAYERS - 1][new_slots] = tail
         torch.testing.assert_close(pool.v_buffer[_LAYERS - 1][new_slots], tail)
 
+    def test_graph_captured_writes_reach_slots_past_the_startup_size(self):
+        """A CUDA graph captured before growth keeps writing into the grown span."""
+        with envs.SGLANG_POST_CAPTURE_KV_RESERVE_FACTOR.override(2.0):
+            pool = _pool()
+        pool._finalize_backing_tokens(_STARTUP_TOKENS)
+        loc = torch.zeros(4, dtype=torch.int64, device="cuda")
+        k = torch.randn(4, _HEADS, _DIM, device="cuda", dtype=torch.float16)
+        v = torch.randn(4, _HEADS, _DIM, device="cuda", dtype=torch.float16)
+        stream = torch.cuda.Stream()
+        with torch.cuda.stream(stream):
+            pool.set_kv_buffer(None, loc, k, v, layer_id_override=0)
+        torch.cuda.synchronize()
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph):
+            pool.set_kv_buffer(None, loc, k, v, layer_id_override=0)
+
+        grown = 2 * _PRE_CAPTURE_TOKENS
+        pool._finalize_backing_tokens(grown)
+        loc.copy_(torch.arange(grown - 3, grown + 1, device="cuda"))
+        graph.replay()
+        torch.cuda.synchronize()
+        torch.testing.assert_close(pool.k_buffer[0][loc], k)
+        torch.testing.assert_close(pool.v_buffer[0][loc], v)
+
     def test_growth_stops_at_the_reservation(self):
         pool = _pool()
         pool._finalize_backing_tokens(_STARTUP_TOKENS)

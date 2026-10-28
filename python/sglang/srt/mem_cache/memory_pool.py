@@ -2517,6 +2517,14 @@ class MHATokenToKVPool(KVCache):
             device=self.device,
         )
 
+    def _slot_bound(self) -> int:
+        """Exclusive slot bound for KV writes: the whole span the buffers cover.
+
+        CUDA graphs capture this integer, so it must already cover every slot a
+        post-capture pool can later grow into, not just today's size.
+        """
+        return self._reserve_size + self.page_size
+
     def _post_capture_reserve_size(self) -> int:
         if not self.post_capture_active:
             return self.size
@@ -2855,7 +2863,7 @@ class MHATokenToKVPool(KVCache):
         self._check_physical_write_loc(loc_info, "set_kv_buffer (MHA)")
         # Catch stale slot ids here instead of as illegal-addr / silent KV
         # corruption in the store_kvcache write (gated on SGLANG_ENABLE_ASYNC_ASSERT).
-        maybe_detect_oob(loc, 0, self.size + self.page_size, "set_kv_buffer (MHA)")
+        maybe_detect_oob(loc, 0, self._slot_bound(), "set_kv_buffer (MHA)")
         layer_id = (
             layer_id_override if layer_id_override is not None else layer.layer_id
         )
@@ -2978,9 +2986,9 @@ class MHATokenToKVPool(KVCache):
             row_dim=self.row_dim,
             store_dtype=self.store_dtype,
             device_module=self.device_module,
-            # size + page_size = real slots + the reserved padding slot (padded /
-            # dummy tokens write there); valid index range is [0, size + page_size).
-            size_limit=self.size + self.page_size,
+            # Real slots + the reserved padding slot (padded / dummy tokens write
+            # there); valid index range is [0, _slot_bound()).
+            size_limit=self._slot_bound(),
             alt_stream=self.alt_stream,
             v_row_dim=self.v_row_dim,
         )
@@ -3378,7 +3386,7 @@ class MHATokenToKVPool(KVCache):
             return
 
         # Catch stale indices here instead of as illegal-addr or silent KV corruption.
-        size_limit = self.size + self.page_size
+        size_limit = self._slot_bound()
         maybe_detect_oob(tgt_loc, 0, size_limit, "move_kv_cache tgt_loc")
         maybe_detect_oob(src_loc, 0, size_limit, "move_kv_cache src_loc")
 
