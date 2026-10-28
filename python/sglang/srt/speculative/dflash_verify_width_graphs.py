@@ -10,6 +10,7 @@ import logging
 import time
 from typing import Dict, Optional, Sequence
 
+from sglang.srt.model_executor.cuda_graph_config import Phase, with_phase
 from sglang.srt.model_executor.forward_batch_info import ForwardBatch
 from sglang.srt.model_executor.model_runner_components.attention_backend_setup import (
     get_attention_backend,
@@ -17,9 +18,15 @@ from sglang.srt.model_executor.model_runner_components.attention_backend_setup i
 from sglang.srt.model_executor.runner.decode_cuda_graph_runner import (
     DecodeCudaGraphRunner,
 )
+from sglang.srt.runtime_context import get_context, get_exec
 from sglang.srt.utils.common import get_available_gpu_memory
 
 logger = logging.getLogger(__name__)
+
+# Measured on Qwen3-8B / RTX 5090: eager narrow verify ran as fast as a graph at 64
+# running requests and 9-15% slower at 16, while graphs for every batch size took
+# about 0.45 GB per width out of the KV pool; larger batches stay eager.
+_MAX_GRAPH_BATCH_SIZE = 32
 
 
 class VerifyWidthGraphRunner:
@@ -74,6 +81,26 @@ def build_verify_width_graph_runner(
     base = model_runner.decode_cuda_graph_runner
     if not isinstance(base, DecodeCudaGraphRunner):
         return None
+    graph_config = get_exec().graph.cuda_graph_config
+    small_batches = [bs for bs in graph_config.decode.bs if bs <= _MAX_GRAPH_BATCH_SIZE]
+    get_context().override(
+        "dflash.verify_width_graphs",
+        cuda_graph_config=with_phase(graph_config, Phase.DECODE, bs=small_batches),
+    )
+    try:
+        by_width = _capture_by_width(
+            model_runner=model_runner, widths=widths, device=device, gpu_id=gpu_id
+        )
+    finally:
+        get_context().override(
+            "dflash.verify_width_graphs.restore", cuda_graph_config=graph_config
+        )
+    return VerifyWidthGraphRunner(base=base, by_width=by_width)
+
+
+def _capture_by_width(
+    *, model_runner, widths: Sequence[int], device: str, gpu_id: int
+) -> Dict[int, DecodeCudaGraphRunner]:
     by_width = {}
     for width in sorted(set(widths), reverse=True):
         tic = time.perf_counter()
@@ -93,9 +120,11 @@ def build_verify_width_graph_runner(
             speculative_num_draft_tokens=width,
         )
         logger.info(
-            "Captured DFLASH verify graphs at width %d: %.2f s, %.2f GB.",
+            "Captured DFLASH verify graphs at width %d for batch sizes %s: "
+            "%.2f s, %.2f GB.",
             width,
+            by_width[width].capture_bs,
             time.perf_counter() - tic,
             before_gb - get_available_gpu_memory(device, gpu_id),
         )
-    return VerifyWidthGraphRunner(base=base, by_width=by_width)
+    return by_width
