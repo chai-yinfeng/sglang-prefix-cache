@@ -1,0 +1,16 @@
+backend,drafter,algorithm,source,n,makespan_s,ttft_p50,ttft_p95,tpot_p50,e2e_p50,e2e_p95
+flashinfer,plain,plain-pcs-default,r5-openloop-natural,979,245.31,36.9,120.1,14.2,3438.4,9417.1
+flashinfer,DFlash,dflash-pcs-b16,r5-openloop-natural,979,275.88,9855.0,26018.9,46.7,22219.2,46925.7
+flashinfer,DFlash,dflash-pcs-b4,r5-openloop-natural,979,243.74,46.9,142.7,10.7,2596.0,6910.4
+flashinfer,DFlash,dflash-pcs-b3,r5-openloop-natural,979,243.95,46.0,139.6,11.1,2722.6,7194.9
+flashinfer,DFlash,dflash-pcs-width-g,r5-graph-openloop-natural,979,243.9,51.2,145.5,12.2,2985.0,8768.3
+fa4,DSpark,dspark-fa4-loadaware,o1-ol-natural,979,242.83,49.0,132.4,8.7,2103.8,6381.8
+fa4,DSpark,dspark-fa4-planner,o1-ol-natural,979,242.79,44.7,128.8,7.4,1827.4,5048.3
+fa4,DSpark,dspark-pcs,o1-ol-natural,979,242.58,47.5,127.9,8.2,2019.0,6037.2
+flashinfer,EAGLE3,eagle3-pcs-adaptive,o1-ol-natural,979,530.78,162843.0,268019.0,6.3,166081.7,279540.1
+flashinfer,EAGLE3,eagle3-pcs-adaptive-lite,o1-ol-natural,979,242.92,46.9,147.2,8.4,2066.0,5817.0
+flashinfer,EAGLE3,eagle3-pcs-s1,o1-ol-natural,979,243.8,43.9,139.2,10.4,2569.5,7009.6
+flashinfer,EAGLE3,eagle3-pcs-s2,o1-ol-natural,979,243.27,45.2,144.3,8.7,2182.2,6040.4
+flashinfer,EAGLE3,eagle3-pcs-s3,o1-ol-natural,979,242.93,47.0,145.1,8.3,2043.3,5782.4
+flashinfer,EAGLE3,eagle3-pcs-s5,o1-ol-natural,979,242.98,50.9,148.9,8.9,2230.4,6439.4
+fa4,plain,plain-fa4-pcs,o1-ol-natural,979,245.28,35.9,118.5,14.7,3531.7,9840.0
