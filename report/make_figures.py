@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.patches import FancyBboxPatch, Patch, Rectangle
 
 ROOT = Path(__file__).resolve().parent
 EXP = ROOT.parent / "experiments"
@@ -104,6 +104,137 @@ def concurrency_axis(ax, ticks):
     ax.set_xticklabels([str(t) for t in ticks])
     ax.minorticks_off()
     ax.set_xlabel("concurrency")
+
+
+# ---------------------------------------------------------------- introduction diagrams
+
+GOOD, BAD = "#0ca30c", "#d03b3b"
+
+
+def token(ax, x, y, text, w=0.75, h=0.5, fc="white", ec=AXIS, color=INK, alpha=1.0, fontsize=10, bold=False):
+    ax.add_patch(FancyBboxPatch((x, y - h / 2), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fc, ec=ec,
+                                lw=1.2, alpha=alpha))
+    if text:
+        ax.text(x + w / 2, y, text, ha="center", va="center", fontsize=fontsize, color=color, alpha=alpha,
+                fontweight="bold" if bold else "normal")
+
+
+def diagram_canvas(w, h, title):
+    """Axes spanning the whole figure, in inches, so layout is set in data coordinates."""
+    fig = plt.figure(figsize=(w, h))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, w)
+    ax.set_ylim(0, h)
+    ax.axis("off")
+    ax.text(w / 2, h - 0.25, title, ha="center", va="center", fontsize=13, fontweight="bold")
+    return fig, ax
+
+
+def spec_decode_diagram():
+    fig, ax = diagram_canvas(11.5, 4.7, "Speculative decoding: guess cheaply, check in parallel")
+    prompt, drafts = ["The", "cat", "sat", "on", "the"], ["mat", "and", "slept", "well"]
+    w, step, x0 = 0.8, 0.88, 2.95
+    xs_prompt = [x0 + i * step for i in range(len(prompt))]
+    xs_draft = [x0 + (len(prompt) + i) * step + 0.15 for i in range(len(drafts))]
+    rows = [(3.5, "1. Draft", "a small model guesses\nthe next 4 tokens"),
+            (2.15, "2. Verify", "the large target model checks\nall 4 in ONE forward pass"),
+            (0.9, "3. Keep", "the accepted prefix plus the\ntarget's own next token")]
+    for y, title, sub in rows:
+        ax.text(0.1, y + 0.12, title, fontsize=12, fontweight="bold", va="center")
+        ax.text(0.1, y - 0.3, sub, fontsize=8.5, color=INK2, va="center")
+        for x, t in zip(xs_prompt, prompt):
+            token(ax, x, y, t, w=w, fc="#f0efec", alpha=1.0 if y > 3 else 0.45)
+    ax.text((xs_prompt[0] + xs_prompt[-1] + w) / 2, 3.93, "context", ha="center", fontsize=8.5, color=MUTED)
+    ax.text((xs_draft[0] + xs_draft[-1] + w) / 2, 3.93, "draft guesses", ha="center", fontsize=8.5, color=ORANGE)
+    for x, t in zip(xs_draft, drafts):
+        token(ax, x, 3.5, t, w=w, fc="#fbe1d6", ec=ORANGE)
+    for x, t, ok in zip(xs_draft, drafts, (True, True, False, None)):
+        if ok is None:
+            token(ax, x, 2.15, t, w=w, fc="white", ec=AXIS, alpha=0.35)
+            ax.text(x + w / 2, 2.15 + 0.4, "discarded", ha="center", fontsize=7.5, color=MUTED)
+        else:
+            token(ax, x, 2.15, t, w=w, fc="white", ec=GOOD if ok else BAD)
+            ax.text(x + w - 0.02, 2.15 + 0.36, "✓" if ok else "✗", fontsize=12, fontweight="bold",
+                    color=GOOD if ok else BAD, ha="center", va="center")
+    ax.text(xs_draft[2] + w / 2, 2.15 - 0.4, "target: purred", ha="center", va="top", fontsize=7.5, color=BAD)
+    for x, t, fc, ec in zip(xs_draft[:3], ["mat", "and", "purred"], ["#d7f0d7", "#d7f0d7", "#d6e6fa"],
+                            [GOOD, GOOD, BLUE]):
+        token(ax, x, 0.9, t, w=w, fc=fc, ec=ec, fontsize=9.5, bold=True)
+    ax.text(xs_draft[2] + w / 2, 0.9 - 0.4, "from target", ha="center", va="top", fontsize=7.5, color=BLUE)
+    ax.text(xs_draft[3] + 0.05, 0.9, "+3 tokens per\ntarget forward\n(normal decoding: +1)", va="center",
+            fontsize=9, fontweight="bold", color=INK)
+    for y in (3.5, 2.15):
+        ax.annotate("", xy=(1.0, y - 0.9), xytext=(1.0, y - 0.58),
+                    arrowprops=dict(arrowstyle="-|>", color=MUTED, lw=1.2))
+    ax.text(5.75, 0.12, "The output is exactly what the target model alone would produce; speculation only changes "
+            "how many target forward passes it takes.", ha="center", fontsize=8.5, color=MUTED)
+    save(fig, "intro-1-spec-decode.png")
+
+
+def drafter_comparison_diagram():
+    fig, ax = diagram_canvas(14, 6.9, "Three drafters, three ways to decide how much the target verifies")
+    head_y = 6.15
+    for x, text in ((0.1, "Drafter"), (2.75, "Draft: how the guesses are made"),
+                    (7.25, "Verify: tokens checked per request"), (11.45, "Who sets the verify width")):
+        ax.text(x, head_y, text, fontsize=10.5, fontweight="bold", color=INK2, va="center")
+    ax.plot([0.1, 13.9], [head_y - 0.3, head_y - 0.3], color=AXIS, lw=1)
+    rows = [
+        ("EAGLE3", BLUE, "#d6e6fa", 5.0, ["1-layer draft head", "draft KV 4 KiB/token", "accept ~2.3 tokens/step"],
+         "3 sequential forwards, one token each", [(4, 2), (4, 3)], "fixed: 4 per request (steps + 1)",
+         "Fixed by --speculative-num-steps.\nSGLang adaptive can switch the\nstep count by batch size and\n"
+         "acceptance, but every choice\nneeds its own CUDA graphs."),
+        ("DFlash", ORANGE, "#fbe1d6", 3.15, ["5-layer block drafter", "draft KV 20 KiB/token", "accept ~2.2 tokens/step"],
+         "1 forward drafts the whole block in parallel", [(16, 2), (16, 3)],
+         "fixed: 16 per request, most rejected on chat", "Fixed by the block size (16).\nNo runtime knob in SGLang."),
+        ("DSpark", AQUA, "#d3f0e5", 1.3, ["5-layer block drafter", "+ confidence head", "draft KV 20 KiB/token",
+                                           "accept ~2.8 tokens/step"],
+         "1 forward drafts 7 tokens, each with a confidence", [(7, 4), (2, 1)],
+         "differs per request (up to 8)", "Per request, every step: the\nSGLang planner weighs each\ntoken's "
+         "confidence against\nthe measured cost of a step."),
+    ]
+    for name, color, light, y, facts, draft_note, verify, verify_note, policy in rows:
+        ax.text(0.1, y + 0.55, name, fontsize=14, fontweight="bold", color=color, va="center")
+        for i, f in enumerate(facts):
+            ax.text(0.1, y + 0.12 - i * 0.3, f, fontsize=8.5, color=INK2, va="center")
+        if name == "EAGLE3":
+            for i in range(3):
+                x = 3.0 + i * 1.3
+                token(ax, x, y + 0.3, f"t{i + 1}", w=0.6, h=0.45, fc=light, ec=color)
+                ax.text(x + 0.3, y - 0.12, f"fwd {i + 1}", ha="center", fontsize=8, color=INK2)
+                if i < 2:
+                    ax.annotate("", xy=(x + 1.27, y + 0.3), xytext=(x + 0.63, y + 0.3),
+                                arrowprops=dict(arrowstyle="-|>", color=color, lw=1.4))
+        else:
+            n, w, gap = (15, 0.24, 0.03) if name == "DFlash" else (7, 0.5, 0.08)
+            for i in range(n):
+                token(ax, 2.85 + i * (w + gap), y + 0.3, "", w=w, h=0.45, fc=light, ec=color)
+            right = 2.85 + n * (w + gap) - gap
+            if name == "DSpark":
+                for i, c in enumerate([0.95, 0.85, 0.7, 0.5, 0.35, 0.25, 0.15]):
+                    ax.add_patch(Rectangle((2.85 + i * (w + gap) + 0.12, y + 0.56), w - 0.24, 0.28 * c,
+                                           fc=color, ec="none"))
+                ax.text(right + 0.1, y + 0.65, "confidence", fontsize=7.5, color=INK2, va="center")
+            ax.plot([2.85, 2.85, right, right], [y - 0.02, y - 0.08, y - 0.08, y - 0.02], color=INK2, lw=1)
+            ax.text((2.85 + right) / 2, y - 0.2, "1 forward", ha="center", va="top", fontsize=8, color=INK2)
+        ax.text(2.85, y - 0.55, draft_note, fontsize=8.5, color=INK, va="center")
+        for r, (n, ok) in enumerate(verify):
+            ry = y + 0.45 - r * 0.5
+            ax.text(7.25, ry, "AB"[r], fontsize=8.5, color=INK2, va="center", fontweight="bold")
+            for i in range(n):
+                accepted = i < ok
+                token(ax, 7.55 + i * 0.235, ry, "", w=0.205, h=0.36, fc=color if accepted else "#ecebe6",
+                      ec=color if accepted else AXIS)
+        ax.text(7.25, y - 0.55, verify_note, fontsize=8.5, color=INK, va="center")
+        ax.text(11.45, y + 0.2, policy, fontsize=8.5, color=INK, va="center", linespacing=1.35)
+        if y > 2:
+            ax.plot([0.1, 13.9], [y - 0.95, y - 0.95], color=GRID, lw=1)
+    legend = [Patch(fc="#9a9993", ec="none"), Patch(fc="#ecebe6", ec=AXIS)]
+    ax.legend(legend, ["accepted (filled in the drafter's color)", "checked by the target, then rejected (wasted)"],
+              loc="lower center", bbox_to_anchor=(0.55, 0.045), ncol=2, fontsize=8.5)
+    ax.text(7, 0.12, "Configurations as served in this report (EAGLE3 steps 3, DFlash block 16, DSpark block 7). "
+            "Acceptance: Qwen3-8B, natural chat. Verify rows A / B are illustrations.", ha="center", fontsize=8.5,
+            color=MUTED)
+    save(fig, "intro-2-drafters.png")
 
 
 # ---------------------------------------------------------------- stress-test data
@@ -574,6 +705,8 @@ def hicache():
 
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
+    spec_decode_diagram()
+    drafter_comparison_diagram()
     overview_heatmap()
     speedup_panels("w2-shared-prefix", "Scenario 1 - shared prefix (W2): repeated 4K-token document prefixes",
                    "stress-1-shared-prefix.png", "24 document prefixes x 4K tokens, Zipf access, 128 output tokens. "
