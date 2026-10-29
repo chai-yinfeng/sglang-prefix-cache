@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import msgspec
+import numpy as np
 import torch
 
 from sglang.test.ci.ci_register import register_cpu_ci
@@ -24,6 +26,7 @@ from sglang.srt.managers.scheduler_components.spec_policy.controller import (  #
 from sglang.srt.managers.scheduler_components.spec_policy.ledger import (  # noqa: E402
     MemoryLedger,
     _unique_param_bytes,
+    build_memory_ledger,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.memory_split import (  # noqa: E402
     spec_state_memory_ratio,
@@ -592,6 +595,20 @@ class TestMemoryLedger(CustomTestCase):
             draft_weights_bytes=2 << 30,
         )
         self.assertEqual(ledger.tokens_for_bytes(ledger.draft_weights_bytes), 12787)
+
+    def test_ledger_from_numpy_pool_sizes_encodes_to_the_trace(self):
+        """A draft pool sized by get_kv_size_bytes (numpy ints, no post-capture backing,
+        as EAGLE3's) must not leave numpy floats that crash the trace header at startup."""
+
+        def runner(capacity):
+            pool = Mock(size=capacity, post_capture_active=False)
+            pool.get_kv_size_bytes.return_value = (np.int64(1 << 20), np.int64(1 << 20))
+            return SimpleNamespace(token_to_kv_pool=pool, model=torch.nn.Linear(2, 2))
+
+        ledger = build_memory_ledger(
+            target_runner=runner(1024), draft_runners=[runner(1024)]
+        )
+        msgspec.json.encode(ledger)
 
 
 class TestSpecStateMemoryRatio(CustomTestCase):

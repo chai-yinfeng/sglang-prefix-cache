@@ -26,7 +26,8 @@ def kv_pool_bytes(pool) -> int:
     if pool.post_capture_active:
         return pool.post_capture_backed_bytes
     k_bytes, v_bytes = pool.get_kv_size_bytes()
-    return k_bytes + v_bytes
+    # get_kv_size_bytes sums numpy ints, which the msgspec trace encoder rejects.
+    return int(k_bytes + v_bytes)
 
 
 def _unique_param_bytes(models: Sequence[torch.nn.Module], seen: set[int]) -> int:
