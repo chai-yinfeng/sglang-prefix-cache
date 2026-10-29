@@ -73,7 +73,9 @@ def family(algo):
 def save(fig, name):
     fig.savefig(OUT / name, bbox_inches="tight")
     if LATEX_FIGS.is_dir():
-        fig.savefig(LATEX_FIGS / Path(name).with_suffix(".pdf"), bbox_inches="tight")
+        # No creation date, so an unchanged figure re-renders byte-identical in the Overleaf repo.
+        fig.savefig(LATEX_FIGS / Path(name).with_suffix(".pdf"), bbox_inches="tight",
+                    metadata={"CreationDate": None})
     plt.close(fig)
     print(OUT / name)
 
