@@ -139,4 +139,73 @@ E2E p50 / p95（s），TPOT p50（ms）：
 
 ## O2 hybrid 显存划分
 
-（排队中：Qwen3.5-4B EAGLE3 / DSpark，27B MTP / DSpark / DFlash2。）
+`--speculative-policy memory` 在启动时把 state 池占比乘以 (S + D) / S（第五轮 m1）：
+- S 是每个请求的持久 state 槽；
+- D 是每个请求的 verify 中间状态数。
+
+这一轮把第五轮已有的 MTP、DFlash 补上 EAGLE3 和 DSpark，并在 27B 上测。数据：`o2-hybrid-split.csv`。
+
+### Qwen3.5-4B
+
+设置：
+- BF16，flashinfer；`extra_buffer` + overlap，所以 S = 5。
+- 负载 w1-natural，并发 16 / 64，单次运行。
+- 两个 drafter 都是社区权重：
+  - EAGLE3 是 `yuyijiong/Qwen3.5-4B-Eagle3`，用 3/1/4。它的 head_dim 是 160，draft 用 flashinfer 时 prefill CUDA graph capture 会非法访存，所以 draft attention 用 triton（它的模型卡也是这样跑的）。
+  - DSpark 是 `shanjiaz/Qwen3.5-4B-DSpark-b16-…`，block 16。它的 config 是 speculators 格式，aux 层号 19/23/27/29/31 是 vLLM 的约定（第 i 层的输入）；SGLang 的约定是第 i 层的输出，所以换成 18/22/26/28/30。照原样会越界。
+- MTP、DFlash 的数字取自第五轮 m1，plain 取自第四轮。
+
+吞吐（tok/s），并发 16 / 64，括号里是请求上限：
+
+| drafter | 每个请求的 verify 状态 D | 默认比例 0.9 | **memory policy** | 提升（c16 / c64） |
+|---|---:|---|---|---|
+| MTP（第五轮） | 4 | 1482 / 1741（12） | 1599 / 1998（16） | +8% / +15% |
+| **EAGLE3** | 4 | 1332 / 1642（12） | 1535 / 1881（16） | **+15% / +15%** |
+| DFlash b4（第五轮） | 4 | 1640 / 1918（12） | 1790 / 2245（16） | +9% / +17% |
+| DFlash b16（第五轮） | 16 | 969 / 1000（4） | 1280 / 1364（8） | +32% / +36% |
+| **DSpark b16** | 17 | 477 / 499（4） | 657 / 716（8） | **+38% / +43%** |
+| plain（第四轮） | 0 | 1162 / 1916（26） | - | - |
+
+- **五个 drafter 都提升，提升幅度由 D 决定，与 drafter 种类无关。**
+  - D = 4 的三个（MTP、EAGLE3、DFlash b4）在并发 64 都是 +15–17%，请求上限都从 12 变成 16。
+  - D = 16–17 的两个（DFlash b16、DSpark）是 +36–43%，请求上限从 4 变成 8。
+- 请求不再排在上限外面，TTFT 也下降：EAGLE3 并发 16 从 608 ms 降到 54 ms；DSpark 并发 64 从 24.8 s 降到 15.8 s。
+- 代价是 KV 池变小（EAGLE3 183K → 133K token，DSpark 136K → 52K），对这个短上下文负载还够用。
+- DSpark 的绝对吞吐低（policy 后也只有 plain 的 0.37 倍）：
+  - 社区权重在这个负载上接受长度 2.15（模型卡在 vLLM 上测的是 2.45–2.87），却每步 verify 17 个 token。
+  - 这里比的是显存划分，不是 drafter 的好坏。接受长度不是 1，说明层号换算基本是对的。
+- EAGLE3 在 policy 下，并发 16 是 plain 的 1.32 倍，并发 64 是 0.98 倍。
+
+### Qwen3.8-27B（NVFP4）
+
+设置：
+- `extra_buffer_lazy`，S = 4；负载 w1-natural 和 W2，并发 1 / 4 / 16，单次运行。
+- 每个 drafter 比四种划分：
+  - 默认比例 0.9；
+  - memory policy；
+  - cookbook 比例：DSpark / DFlash2 是 6.52，已经算进了 (S + D)；MTP 是 2.17，开 ReplaySSM；
+  - E1 手调的固定池：指定请求数，关掉 target 的 prefill CUDA graph；数据来自压力测试 E2，用的是 pinned checkout。
+- MTP 默认开 ReplaySSM，这时 D = 0，policy 按设计不放大比例。所以 MTP 的默认和 policy 两行不开 ReplaySSM（D = 4）。
+
+w1-natural 吞吐（tok/s），并发 1 / 4 / 16，括号里是请求上限：
+
+| drafter | 默认 0.9 | **memory policy** | cookbook 比例 | 手调固定池（E2） |
+|---|---|---|---|---|
+| DSpark（D = 8） | **起不来**（0 个请求） | 比例 2.7：148 / 148 / 148（1） | 6.52：148 / 148 / 148（1） | 150 / 251 / 257（2） |
+| DFlash2（D = 8） | **起不来** | 比例 2.7：158 / 158 / 159（1） | 6.52：156 / 275 / 278（2） | 151 / 348 / 358（3） |
+| MTP（不开 ReplaySSM，D = 4） | **起不来** | 比例 1.8：130 / 130 / 131（1） | 开 ReplaySSM，2.17：126 / 127 / 128（1） | 开 ReplaySSM：124 / 371 / 372（4） |
+| plain | | | 2.17：73 / 249 / 560（15） | |
+
+- **默认比例下三个推测配置都起不来**：state 池放不下一个请求的 S + D 个状态，SGLang 直接报错"state cache is too small to serve any requests"。memory policy 让三个都能启动、正常服务。
+- **但 policy 在 27B 上只给出 1 个请求**，比 cookbook 比例（DFlash2 2 个）和手调的固定池（2–4 个）都少：
+  - policy 只补推测那一部分 (S + D) / S，持久 state 和 KV 之间仍沿用默认 0.9 的平衡。
+  - 在这张卡上，这个平衡给 KV 太多：DFlash2 在 policy 下 KV 有 32K token，只服务 1 个请求；cookbook 比例下 14K token，服务 2 个。
+  - 第五轮 MTP 在 4B 上也遇到同样的问题。最优的持久 state : KV 比例取决于负载的上下文长度，规则故意不猜。
+- 手调固定池能到 2–4 个请求，靠的是直接指定 state 槽数，并关掉 target 的 prefill CUDA graph（约 1.9 GB）。这两件事都不在 policy 的范围内。
+- 不开 ReplaySSM 的 MTP 在 policy 下（1 个请求，130 tok/s），和开 ReplaySSM 的 cookbook 配置（1 个请求，126–128 tok/s）持平。
+- W2 的结论相同：policy 下 DSpark / DFlash2 / MTP 都是 1 个请求、105–122 tok/s；DFlash2 的 cookbook 比例在并发 4 是 174 tok/s。
+
+### 小结
+
+- 显存划分这一项，在 4B 上对五个 drafter 都是正收益，收益和 D 成正比。
+- 在 27B 上，它把"起不来"变成"能服务 1 个请求"，但离 cookbook 和手调的池子还差 1–3 个请求。27B 的瓶颈是总显存，不是划分比例。
