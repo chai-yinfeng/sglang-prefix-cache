@@ -1706,6 +1706,17 @@ class EAGLEWorkerV2(BaseSpecWorker):
         if self.adaptive_controller is not None:
             self.adaptive_controller.activate_step_by_batch(batch_size)
 
+    @property
+    def verify_widths(self) -> tuple[int, ...]:
+        """Verify widths (topk 1: steps + 1) the policy layer may pin; one per
+        prebuilt adaptive runtime state, none without --speculative-adaptive."""
+        if self.adaptive_controller is None:
+            return ()
+        return tuple(steps + 1 for steps in self.adaptive_controller.candidate_steps)
+
+    def set_verify_width(self, width: int) -> None:
+        self.adaptive_controller.pin_steps(width - 1)
+
     # -- Adaptive speculative decoding protocol --
 
     def build_adaptive_runtime_state(

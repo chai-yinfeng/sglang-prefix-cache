@@ -116,6 +116,24 @@ class TestAdaptiveController(unittest.TestCase):
         controller.on_verify_complete([1], batch_size=1)
         self.assertEqual(worker.applied_steps, [3, 1])
 
+    def test_pinned_steps_hold_against_batch_routing_and_feedback(self):
+        worker = _FakeWorker(initial_steps=3)
+        policy = _FakePolicy()
+        controller = AdaptiveController(worker, policy)
+        controller.init_states()
+
+        controller.pin_steps(3)
+        controller.activate_step_by_batch(batch_size=8)
+        policy.feedback_step = 1
+        controller.on_verify_complete([0], batch_size=8)
+        self.assertEqual(worker.speculative_num_steps, 3)
+        controller.pin_steps(1)
+        self.assertEqual(worker.applied_steps, [3, 1])
+        with self.assertRaisesRegex(
+            ValueError, "Missing adaptive runtime state for steps=5"
+        ):
+            controller.pin_steps(5)
+
     def test_missing_state_fails_loud(self):
         worker = _FakeWorker(initial_steps=3)
         controller = AdaptiveController(worker, _FakePolicy())

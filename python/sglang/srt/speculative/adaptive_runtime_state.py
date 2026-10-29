@@ -87,10 +87,20 @@ class AdaptiveController:
         self.worker = worker
         self.params: AdaptiveSpecPolicy = policy
         self._states: dict[int, SpecRuntimeState] = {}
+        # Set by an external policy (pin_steps); overrides the per-BS acceptance rule.
+        self._pinned_steps: int | None = None
 
     @property
     def candidate_steps(self) -> list[int]:
         return self.params.candidate_steps
+
+    def pin_steps(self, steps: int) -> None:
+        """Run every batch size at *steps* until pinned again."""
+        if steps not in self._states:
+            raise ValueError(f"Missing adaptive runtime state for steps={steps}")
+        self._pinned_steps = steps
+        if steps != self.worker.speculative_num_steps:
+            self._activate(steps)
 
     def register(self, state: SpecRuntimeState, steps: int | None = None) -> None:
         """Register a pre-built runtime state.
@@ -120,6 +130,8 @@ class AdaptiveController:
         self._activate(self.worker.speculative_num_steps)
 
     def activate_step_by_batch(self, batch_size: int) -> None:
+        if self._pinned_steps is not None:
+            return
         target = self.params.get_steps_for_batch(batch_size)
         if target != self.worker.speculative_num_steps:
             self._activate(target)
@@ -128,6 +140,8 @@ class AdaptiveController:
         self, num_correct_drafts_per_req: list[int], batch_size: int
     ) -> None:
         """Feed verify results; switch runtime state if the policy requests it."""
+        if self._pinned_steps is not None:
+            return
         new_step = self.params.on_verify_complete(
             num_correct_drafts_per_req, batch_size
         )

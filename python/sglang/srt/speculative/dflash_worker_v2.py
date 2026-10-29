@@ -638,6 +638,10 @@ class DFlashWorkerV2(BaseSpecWorker):
             self._verify_width = int(width)
             logger.info("DFLASH verify width set to %d", width)
 
+    def set_verify_width(self, width: int) -> None:
+        """The policy layer's width knob, shared with EAGLEWorkerV2."""
+        self.set_dflash_verify_width(width)
+
     def _draft_spec_info(self, width: int) -> DFlashVerifyInput:
         if width not in self._draft_block_spec_infos:
             self._draft_block_spec_infos[width] = make_draft_block_spec_info(

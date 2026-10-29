@@ -279,9 +279,11 @@ class Spec(msgspec.Struct):
         "memory ratio by (state slots + verify states) / state slots per request; "
         "'regime' (DSpark compact ragged verify) pauses "
         "drafting while measured decode goodput is higher without it; 'conditional' "
-        "combines 'regime', 'priority' and 'memory'; 'width' (DFlash, greedy draft "
-        "head) moves the per-step verify window between 1 and the block size to "
-        "whichever measured decode goodput favors.",
+        "combines 'regime', 'priority' and 'memory'; 'width' moves the per-step "
+        "verify window to whichever measured decode goodput favors: for DFlash "
+        "(greedy draft head) between 1 and the block size, for EAGLE with "
+        "--speculative-adaptive between its candidate step counts (it replaces the "
+        "acceptance-based step switching).",
     ] = "none"
     speculative_policy_trace_path: A[
         Optional[str],

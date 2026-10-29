@@ -35,6 +35,7 @@ from sglang.srt.managers.scheduler_components.spec_policy.policy import (  # noq
     PriorityWeightPolicy,
     SpecRegimePolicy,
     SpecWidthPolicy,
+    dflash_width_ladder,
     knee_tokens_from_sps,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (  # noqa: E402
@@ -380,7 +381,7 @@ class TestSpecWidthPolicy(CustomTestCase):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
         window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         # Four requests: any narrower window stays below the verify-token floor.
         plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
         self.assertEqual(plan.verify_width, 16)
@@ -414,7 +415,7 @@ class TestSpecWidthPolicy(CustomTestCase):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
         window = mod._REGIME_WINDOW_STEPS
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         # Whole windows at 4 requests (the width never moves, so none settles).
         plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
         # One window at 64 requests commits 2.5 of 16 positions: 64 x 4 verify tokens
@@ -425,7 +426,7 @@ class TestSpecWidthPolicy(CustomTestCase):
     def test_a_wasteful_load_spike_jumps_on_its_first_step(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(
             policy, SpecPolicyPlan(), steps=8 * mod._REGIME_WINDOW_STEPS, batch_size=4
         )
@@ -434,7 +435,7 @@ class TestSpecWidthPolicy(CustomTestCase):
         plan = _width_steps(policy, plan, steps=1, batch_size=64)
         self.assertEqual(plan.verify_width, 4)
         # The well-used edit-like window does not.
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(
             policy,
             SpecPolicyPlan(),
@@ -449,7 +450,7 @@ class TestSpecWidthPolicy(CustomTestCase):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
         window = mod._REGIME_WINDOW_STEPS
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(
             policy, SpecPolicyPlan(), steps=8 * window, batch_size=4, survival=0.97
         )
@@ -464,7 +465,7 @@ class TestSpecWidthPolicy(CustomTestCase):
     def test_a_half_wasted_window_jumps(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(
             policy,
             SpecPolicyPlan(),
@@ -480,7 +481,7 @@ class TestSpecWidthPolicy(CustomTestCase):
     def test_a_wide_window_under_load_closes_early(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(
             policy,
             SpecPolicyPlan(),
@@ -498,7 +499,7 @@ class TestSpecWidthPolicy(CustomTestCase):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
         window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
         # Two windows at 64 requests: jumped to width 4 and climbing.
         plan = _width_steps(policy, plan, steps=2 * window, batch_size=64)
@@ -511,7 +512,7 @@ class TestSpecWidthPolicy(CustomTestCase):
     def test_steps_at_another_width_do_not_count(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         observation = Observation(
             step=0,
             forward_mode="DECODE",
@@ -532,7 +533,7 @@ class TestSpecWidthPolicy(CustomTestCase):
     def test_losing_rounds_back_off(self):
         from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
 
-        policy = SpecWidthPolicy(max_width=16)
+        policy = SpecWidthPolicy(widths=dflash_width_ladder(16))
         widths, plan = [], SpecPolicyPlan()
         for _ in range(16 * mod._REGIME_EXPLOIT_STEPS // mod._REGIME_WINDOW_STEPS):
             plan = _width_steps(
@@ -546,13 +547,29 @@ class TestSpecWidthPolicy(CustomTestCase):
         # 1024 steps (about 15 of them).
         self.assertLessEqual(probes, 5)
 
+    def test_an_eagle_step_ladder_widens_when_idle_and_narrows_under_load(self):
+        from sglang.srt.managers.scheduler_components.spec_policy import policy as mod
+
+        window = mod._REGIME_WINDOW_STEPS + mod._REGIME_SETTLE_STEPS
+        # EAGLE adaptive candidate steps {0, 1, 3, 5} -> verify widths 1 / 2 / 4 / 6.
+        policy = SpecWidthPolicy(widths=(2, 6, 1, 4))
+        plan = _width_steps(policy, SpecPolicyPlan(), steps=8 * window, batch_size=4)
+        self.assertEqual(plan.verify_width, 6)
+        plan = _width_steps(
+            policy,
+            plan,
+            steps=mod._REGIME_MIN_DECISION_STEPS + 10 * window,
+            batch_size=64,
+        )
+        self.assertEqual(plan.verify_width, 2)
+
     def test_width_reaches_the_worker_once_per_change(self):
         worker = Mock()
         actuator = SpecPolicyActuator(draft_worker=worker)
         narrow = SpecPolicyPlan(verify_width=4)
         actuator.apply(plan=narrow, current=SpecPolicyPlan(), reqs=[])
         actuator.apply(plan=narrow, current=narrow, reqs=[])
-        worker.set_dflash_verify_width.assert_called_once_with(4)
+        worker.set_verify_width.assert_called_once_with(4)
 
 
 class TestMemoryLedger(CustomTestCase):
@@ -725,6 +742,30 @@ class TestSpecPolicyController(CustomTestCase):
                 trace_path=None,
                 is_trace_writer=False,
             )
+
+    def test_width_policy_on_eagle_needs_adaptive_runtime_states(self):
+        from sglang.srt.speculative.eagle_worker_v2 import EAGLEWorkerV2
+
+        worker = Mock(spec=EAGLEWorkerV2)
+        # Without --speculative-adaptive there is one step count and nothing to pin.
+        worker.verify_widths = ()
+        with self.assertRaises(ValueError):
+            SpecPolicyController(
+                policy_name="width",
+                sps_table_path=None,
+                draft_worker=worker,
+                trace_path=None,
+                is_trace_writer=False,
+            )
+        worker.verify_widths = (1, 2, 4)
+        controller = SpecPolicyController(
+            policy_name="width",
+            sps_table_path=None,
+            draft_worker=worker,
+            trace_path=None,
+            is_trace_writer=False,
+        )
+        self.assertEqual(controller.policy.width, 4)
 
     def test_non_writer_rank_skips_trace(self):
         with tempfile.TemporaryDirectory() as tmp:

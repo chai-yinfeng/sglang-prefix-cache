@@ -13,6 +13,7 @@ from sglang.srt.managers.scheduler_components.spec_policy.actuator import (
 from sglang.srt.managers.scheduler_components.spec_policy.ledger import MemoryLedger
 from sglang.srt.managers.scheduler_components.spec_policy.policy import (
     build_spec_policy,
+    dflash_width_ladder,
 )
 from sglang.srt.managers.scheduler_components.spec_policy.sensor import (
     SpecPolicySensor,
@@ -63,15 +64,13 @@ class SpecPolicyController:
                 f"--speculative-policy {policy_name} pauses drafting, which needs DSpark "
                 "with compact ragged verify and a verify budget planner."
             )
-        max_verify_width = None
-        if policy_name == "width":
-            max_verify_width = _max_verify_width(draft_worker)
+        verify_widths = _verify_widths(draft_worker) if policy_name == "width" else ()
         self.sensor = SpecPolicySensor(ema_alpha=_EMA_ALPHA)
         self.policy = build_spec_policy(
             name=policy_name,
             sps_table_path=sps_table_path,
             ledger=ledger,
-            max_verify_width=max_verify_width,
+            verify_widths=verify_widths,
         )
         self.actuator = SpecPolicyActuator(
             draft_worker=draft_worker, grow_kv_pool=grow_kv_pool
@@ -140,17 +139,19 @@ def _supports_spec_pause(draft_worker) -> bool:
     return isinstance(draft_worker, DSparkWorkerV2) and draft_worker.supports_spec_pause
 
 
-def _max_verify_width(draft_worker) -> int:
+def _verify_widths(draft_worker) -> tuple[int, ...]:
     from sglang.srt.speculative.dflash_worker_v2 import DFlashWorkerV2
+    from sglang.srt.speculative.eagle_worker_v2 import EAGLEWorkerV2
 
-    if not isinstance(draft_worker, DFlashWorkerV2) or not (
-        draft_worker.supports_verify_width
-    ):
-        raise ValueError(
-            "--speculative-policy width needs DFlash with the greedy draft head and "
-            "no compact draft cache or Mamba verify state."
-        )
-    return int(draft_worker.block_size)
+    if isinstance(draft_worker, DFlashWorkerV2) and draft_worker.supports_verify_width:
+        return dflash_width_ladder(int(draft_worker.block_size))
+    if isinstance(draft_worker, EAGLEWorkerV2) and len(draft_worker.verify_widths) > 1:
+        return draft_worker.verify_widths
+    raise ValueError(
+        "--speculative-policy width needs DFlash with the greedy draft head and no "
+        "compact draft cache or Mamba verify state, or EAGLE with "
+        "--speculative-adaptive and at least two candidate steps."
+    )
 
 
 def _free_gpu_bytes() -> Optional[int]:

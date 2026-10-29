@@ -26,7 +26,7 @@ class SpecPolicyActuator:
         if plan.spec_paused != current.spec_paused:
             self._draft_worker.set_dspark_spec_paused(bool(plan.spec_paused))
         if plan.verify_width is not None and plan.verify_width != current.verify_width:
-            self._draft_worker.set_dflash_verify_width(plan.verify_width)
+            self._draft_worker.set_verify_width(plan.verify_width)
         if plan.dspark_verify_budget_frac != current.dspark_verify_budget_frac:
             self._draft_worker.set_dspark_forced_budget_frac(
                 plan.dspark_verify_budget_frac

@@ -51,8 +51,8 @@ _REGIME_LOAD_SHIFT = 0.25
 # root-only one (W2, w1-natural), so pausing cannot win while each request commits
 # more tokens per step than this; above it the pause is not even probed.
 _REGIME_MAX_PAUSE_ACCEPT_LENGTH = 1.8
-# Arbitrary; the verify widths the width policy moves between, widest first. Width 1
-# verifies only the bonus token (drafting paused).
+# Arbitrary; the DFlash verify widths the width policy moves between, widest first.
+# Width 1 verifies only the bonus token (drafting paused).
 _WIDTH_LADDER = (16, 8, 6, 4, 3, 2, 1)
 # Measured: DFlash decode steps on Qwen3-8B / RTX 5090 cost within 10% of each other
 # from 8 to 64 verify tokens (c1-c16), so a window narrower than this many tokens per
@@ -353,8 +353,8 @@ class SpecWidthPolicy:
     measured for seconds.
     """
 
-    def __init__(self, *, max_width: int) -> None:
-        self._ladder = (max_width, *(w for w in _WIDTH_LADDER if w < max_width))
+    def __init__(self, *, widths: Sequence[int]) -> None:
+        self._ladder = tuple(sorted(set(widths), reverse=True))
         self._index = 0
         self._round: Optional[_ClimbRound] = None
         # Narrowest ladder index the current load allows.
@@ -548,12 +548,16 @@ class CompositePolicy:
         return plan
 
 
+def dflash_width_ladder(block_size: int) -> tuple[int, ...]:
+    return (block_size, *(w for w in _WIDTH_LADDER if w < block_size))
+
+
 def build_spec_policy(
     *,
     name: str,
     sps_table_path: Optional[str],
     ledger: Optional[MemoryLedger] = None,
-    max_verify_width: Optional[int] = None,
+    verify_widths: Sequence[int] = (),
 ) -> SpecPolicy:
     if name == "observe":
         return ObservePolicy()
@@ -564,7 +568,7 @@ def build_spec_policy(
     if name == "regime":
         return SpecRegimePolicy()
     if name == "width":
-        return SpecWidthPolicy(max_width=max_verify_width)
+        return SpecWidthPolicy(widths=verify_widths)
     if name == "conditional":
         return CompositePolicy(
             [
