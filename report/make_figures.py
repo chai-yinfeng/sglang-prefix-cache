@@ -2,7 +2,8 @@
 
     uv run --no-project --with matplotlib python report/make_figures.py
 
-Reads the archived summaries under experiments/ and writes PNGs to report/pics/.
+Reads the archived summaries under experiments/ and writes PNGs to report/pics/, plus PDFs to
+report/latex/figures/ when the LaTeX repo (synced with Overleaf) is checked out there.
 """
 import csv
 import math
@@ -20,6 +21,7 @@ from matplotlib.patches import Patch
 ROOT = Path(__file__).resolve().parent
 EXP = ROOT.parent / "experiments"
 OUT = ROOT / "pics"
+LATEX_FIGS = ROOT / "latex" / "figures"
 
 # Neutral ink and the first categorical slots of the dataviz reference palette.
 INK, INK2, MUTED, GRID, AXIS = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
@@ -52,6 +54,7 @@ plt.rcParams.update({
     "ytick.color": INK2,
     "legend.frameon": False,
     "figure.facecolor": "white",
+    "pdf.fonttype": 42,  # embed TrueType so text in the PDFs stays selectable
 })
 
 
@@ -69,6 +72,8 @@ def family(algo):
 
 def save(fig, name):
     fig.savefig(OUT / name, bbox_inches="tight")
+    if LATEX_FIGS.is_dir():
+        fig.savefig(LATEX_FIGS / Path(name).with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
     print(OUT / name)
 

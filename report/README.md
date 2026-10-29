@@ -7,7 +7,8 @@
 | [`01-stress-test.md`](01-stress-test.md) | 第一部分：压力测试。推测解码在显存压力下哪里输、输多少，以及因此 policy 该往哪改 | 完成 |
 | [`01-stress-test-figures.md`](01-stress-test-figures.md) | 压力测试四个场景（长前缀、多轮对话、显存容量有限、短输入长输出）的图，覆盖 4B / 8B / 27B | 完成 |
 | [`02-optimizations.md`](02-optimizations.md) | 第二部分：三项优化（动态 verify 宽度、hybrid 显存划分、HiCache）做了什么，以及在 EAGLE3 / DFlash / DSpark 上的结果图 | 完成 |
-| [`make_figures.py`](make_figures.py) | 从 `experiments/` 的归档 CSV 生成 `pics/` 下所有图：`uv run --no-project --with matplotlib python report/make_figures.py` | |
+| [`make_figures.py`](make_figures.py) | 从 `experiments/` 的归档 CSV 生成 `pics/` 下所有图：`uv run --no-project --with matplotlib python report/make_figures.py`。`latex/` 存在时同时输出 PDF 到 `latex/figures/` | |
+| `latex/` | LaTeX 报告，**独立的 git 仓库**，和 Overleaf 互相 pull/push；不在本仓库里（本地 `.git/info/exclude` 排除） | |
 
 ## 分支检查（2026-10-28）
 
