@@ -1,0 +1,28 @@
+config,t_s,event,used_gb,delta_gb
+plain,5.0,weights Qwen3_5ForConditionalGeneration,20.14,20.14
+plain,7.0,state pool 62 slots + KV pool 71824 tokens,27.36,7.22
+plain,25.0,graph target prefill,29.7,2.34
+plain,27.0,graph target decode,29.79,0.09
+plain,30.0,ready,,
+mtp,23.0,weights Qwen3_5ForConditionalGeneration,20.14,20.14
+mtp,24.0,weights Qwen3_5ForCausalLMMTP,26.01,5.87
+mtp,26.0,state pool 16 slots + KV pool 14518 tokens,27.91,1.9
+mtp,26.0,draft KV pool 14518 tokens,27.94,0.03
+mtp,30.0,graph target verify,24.02,-3.92
+mtp,33.0,graph draft decode,24.16,0.14
+mtp,33.0,graph draft extend,24.22,0.06
+mtp,37.0,ready,,
+dspark,9.0,weights Qwen3_5ForConditionalGeneration,20.14,20.14
+dspark,15.0,weights DSparkDraftModel,24.13,3.99
+dspark,16.0,state pool 8 slots + KV pool 8800 tokens,26.78,2.65
+dspark,16.0,draft KV pool 8800 tokens,26.87,0.09
+dspark,18.0,graph target verify,27.6,0.73
+dspark,20.0,graph draft verify,27.77,0.17
+dspark,23.0,ready,,
+dflash2,5.0,weights Qwen3_5ForConditionalGeneration,20.14,20.14
+dflash2,9.0,weights DFlash2DraftModel,24.2,4.06
+dflash2,10.0,state pool 12 slots + KV pool 7235 tokens,27.85,3.65
+dflash2,10.0,draft KV pool 7235 tokens,27.95,0.1
+dflash2,13.0,graph target verify,28.76,0.81
+dflash2,15.0,graph draft verify,28.9,0.14
+dflash2,18.0,ready,,

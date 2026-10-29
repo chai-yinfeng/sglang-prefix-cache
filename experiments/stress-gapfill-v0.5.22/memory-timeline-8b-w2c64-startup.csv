@@ -1,0 +1,32 @@
+config,t_s,event,used_gb,delta_gb
+plain,10.0,weights Qwen3ForCausalLM,15.28,15.28
+plain,11.0,KV pool 58687 tokens,23.76,8.48
+plain,21.0,graph target prefill,25.11,1.35
+plain,22.0,graph target decode,25.26,0.15
+plain,24.0,ready,,
+eagle3,2.0,weights Qwen3ForCausalLM,15.28,15.28
+eagle3,4.0,weights LlamaForCausalLMEagle3,17.51,2.23
+eagle3,4.0,KV pool 43609 tokens,23.55,6.04
+eagle3,4.0,draft KV pool 43609 tokens,23.72,0.17
+eagle3,14.0,graph target prefill,24.35,0.63
+eagle3,16.0,graph target verify,24.73,0.38
+eagle3,17.0,graph draft prefill,24.93,0.2
+eagle3,20.0,graph draft decode,25.49,0.56
+eagle3,22.0,graph draft extend,25.86,0.37
+eagle3,23.0,ready,,
+dflash,2.0,weights Qwen3ForCausalLM,15.28,15.28
+dflash,4.0,weights DFlashDraftModel,17.23,1.95
+dflash,5.0,KV pool 38542 tokens,22.97,5.74
+dflash,5.0,draft KV pool 38542 tokens,23.72,0.75
+dflash,14.0,graph target prefill,26.0,2.28
+dflash,17.0,graph target verify,26.79,0.79
+dflash,19.0,graph draft verify,27.25,0.46
+dflash,21.0,ready,,
+dspark,1.0,weights Qwen3ForCausalLM,15.28,15.28
+dspark,3.0,weights Qwen3DSparkModel,17.38,2.1
+dspark,4.0,KV pool 38093 tokens,23.04,5.66
+dspark,4.0,draft KV pool 38093 tokens,23.79,0.75
+dspark,13.0,graph target prefill,25.78,1.99
+dspark,16.0,graph target verify,26.17,0.39
+dspark,17.0,graph draft verify,26.64,0.47
+dspark,19.0,ready,,
