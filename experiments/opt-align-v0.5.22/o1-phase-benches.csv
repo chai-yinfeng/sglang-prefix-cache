@@ -12,6 +12,8 @@ natural,flashinfer,EAGLE3,eagle3-pcs-s1,o1-natural,174.3,452.6,3031.9,457.0,3050
 natural,flashinfer,EAGLE3,eagle3-pcs-s2,o1-natural,157.2,533.3,3185.4,541.5,3217.9,1.293,,
 natural,flashinfer,EAGLE3,eagle3-pcs-s3,o1-natural,158.0,569.2,3021.1,572.3,3048.2,1.286,,
 natural,flashinfer,EAGLE3,eagle3-pcs-s5,o1-natural,172.0,552.7,2607.9,573.4,2716.6,1.181,,
+natural,flashinfer,EAGLE3,eagle3-pcs-width-s123,o1-natural,154.8,566.8,3133.2,570.7,3164.0,1.313,,
+natural,flashinfer,EAGLE3,eagle3-pcs-width-s1235,o1-natural,171.1,547.5,2737.7,555.3,2690.0,1.188,,
 natural,fa4,plain,plain-fa4-pcs,o1-natural,200.5,341.6,3070.0,347.1,2976.7,1.0,,
 edit,flashinfer,plain,plain-pcs-default,r4-phase-edit,214.7,346.9,3015.2,342.3,3020.3,1.0,,
 edit,flashinfer,DFlash,dflash-pcs-b16,r4-phase-edit,84.9,2307.5,4526.7,2246.1,4543.6,2.529,,
@@ -26,6 +28,8 @@ edit,flashinfer,EAGLE3,eagle3-pcs-s1,o1-edit,156.9,543.1,3633.4,531.4,3637.6,1.3
 edit,flashinfer,EAGLE3,eagle3-pcs-s2,o1-edit,129.2,730.6,4076.1,716.7,4074.3,1.662,,
 edit,flashinfer,EAGLE3,eagle3-pcs-s3,o1-edit,119.3,864.8,4172.5,846.2,4155.2,1.8,,
 edit,flashinfer,EAGLE3,eagle3-pcs-s5,o1-edit,112.1,1017.7,4186.6,988.4,4195.9,1.915,,
+edit,flashinfer,EAGLE3,eagle3-pcs-width-s123,o1-edit,120.6,862.5,4141.3,844.6,4052.6,1.78,,
+edit,flashinfer,EAGLE3,eagle3-pcs-width-s1235,o1-edit,121.5,1014.8,3727.4,986.2,3710.8,1.767,,
 edit,fa4,plain,plain-fa4-pcs,o1-edit,208.9,354.7,3117.7,349.6,3125.1,1.0,,
 mixed,flashinfer,plain,plain-pcs-default,r4-phase-mixed,227.9,2897.7,340.2,2985.7,1124.4,1.0,321.7,1105.5
 mixed,flashinfer,DFlash,dflash-pcs-b16,r4-phase-mixed,197.1,1223.9,2211.1,4529.7,1073.3,1.156,513.5,3765.7
@@ -41,4 +45,6 @@ mixed,flashinfer,EAGLE3,eagle3-pcs-s1,o1-mixed,176.7,2949.6,530.1,3621.1,1443.9,
 mixed,flashinfer,EAGLE3,eagle3-pcs-s2,o1-mixed,151.8,3107.4,706.3,4087.6,1640.5,1.501,517.0,2065.3
 mixed,flashinfer,EAGLE3,eagle3-pcs-s3,o1-mixed,145.5,2956.6,837.8,4179.6,1715.9,1.566,542.0,2369.8
 mixed,flashinfer,EAGLE3,eagle3-pcs-s5,o1-mixed,146.9,2663.9,977.9,4209.5,1617.0,1.551,542.0,2642.3
+mixed,flashinfer,EAGLE3,eagle3-pcs-width-s123,o1-mixed,144.2,3037.2,841.3,4144.5,1735.7,1.58,546.1,2367.7
+mixed,flashinfer,EAGLE3,eagle3-pcs-width-s1235,o1-mixed,151.2,2659.6,977.4,3671.3,1594.1,1.507,546.5,2640.0
 mixed,fa4,plain,plain-fa4-pcs,o1-mixed,224.0,2882.4,348.2,3085.3,1136.2,1.0,328.6,1129.1
